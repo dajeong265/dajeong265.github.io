@@ -41,6 +41,21 @@
         .input-group input[type="number"]:focus { outline: none; border-color: var(--green-light); box-shadow: 0 0 0 3px rgba(82,183,136,0.15); }
         .input-note { font-size: 0.73rem; color: var(--muted); margin-top: 4px; }
 
+        /* ── Day Picker ── */
+        .day-picker-section { margin-top: 18px; }
+        .day-picker-section > .section-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+        .day-picker-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .day-type-label { font-size: 0.75rem; font-weight: 700; width: 46px; flex-shrink: 0; padding: 3px 7px; border-radius: 6px; text-align: center; }
+        .day-type-label.game    { background: #1b4332; color: white; }
+        .day-type-label.drill   { background: var(--green); color: white; }
+        .day-type-label.running { background: #2c7da0; color: white; }
+        .day-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+        .day-btn { width: 34px; height: 30px; border-radius: 6px; border: 1.5px solid var(--border); background: white; font-size: 0.72rem; font-weight: 700; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+        .day-btn.active.game    { background: #1b4332; border-color: #1b4332; color: white; }
+        .day-btn.active.drill   { background: var(--green); border-color: var(--green); color: white; }
+        .day-btn.active.running { background: #2c7da0; border-color: #2c7da0; color: white; }
+        .day-btn:hover:not(.active) { border-color: var(--green-light); color: var(--green); }
+
         .focus-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
         .focus-tag { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; user-select: none; }
         .focus-tag.volley  { background: #fff3cd; color: #856404; border-color: #ffc107; }
@@ -178,17 +193,31 @@
             <div class="input-group">
                 <label>Game Hours / Week</label>
                 <input type="number" id="gameHours" value="4" min="0" max="20" step="0.5">
-                <div class="input-note">Fixed: Thursday evening (4 hrs)</div>
             </div>
             <div class="input-group">
                 <label>Drill &amp; Rally Hours</label>
                 <input type="number" id="drillHours" value="2" min="0" max="10" step="0.5">
-                <div class="input-note">1-hour slots on weekdays (Mon–Tue, Fri)</div>
+                <div class="input-note">1-hour sessions per selected day</div>
             </div>
             <div class="input-group">
                 <label>Running Hours / Week</label>
                 <input type="number" id="runHours" value="1.5" min="0" max="10" step="0.5">
-                <div class="input-note">Fixed: Wednesday</div>
+            </div>
+        </div>
+
+        <div class="day-picker-section">
+            <div class="section-label">Training Days</div>
+            <div class="day-picker-row">
+                <span class="day-type-label game">Game</span>
+                <div class="day-btns" id="gameDayBtns"></div>
+            </div>
+            <div class="day-picker-row">
+                <span class="day-type-label drill">Drill</span>
+                <div class="day-btns" id="drillDayBtns"></div>
+            </div>
+            <div class="day-picker-row">
+                <span class="day-type-label running">Run</span>
+                <div class="day-btns" id="runDayBtns"></div>
             </div>
         </div>
         <div style="margin-top: 16px;">
@@ -317,10 +346,16 @@ const DRILLS = {
 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
+const ALL_DAYS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const FULL_DAYS  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
 let schedule    = [];
 let checked     = {};
-let trainingLog = [];   // archived weeks
+let trainingLog = [];
 let focusAreas  = new Set(['volley', 'forehand', 'backhand']);
+let gameDays    = new Set(['Thu']);
+let drillDays   = new Set(['Mon','Tue','Fri']);
+let runDays     = new Set(['Wed']);
 
 function loadState() {
     try {
@@ -328,7 +363,10 @@ function loadState() {
         schedule    = s.schedule    || [];
         checked     = s.checked     || {};
         trainingLog = s.trainingLog || [];
-        focusAreas  = new Set(s.focusAreas || ['volley', 'forehand', 'backhand']);
+        focusAreas  = new Set(s.focusAreas || ['volley','forehand','backhand']);
+        gameDays    = new Set(s.gameDays   || ['Thu']);
+        drillDays   = new Set(s.drillDays  || ['Mon','Tue','Fri']);
+        runDays     = new Set(s.runDays    || ['Wed']);
         if (s.gameHours  != null) document.getElementById('gameHours').value  = s.gameHours;
         if (s.drillHours != null) document.getElementById('drillHours').value = s.drillHours;
         if (s.runHours   != null) document.getElementById('runHours').value   = s.runHours;
@@ -339,10 +377,36 @@ function saveState() {
     localStorage.setItem('tennis-trainer', JSON.stringify({
         schedule, checked, trainingLog,
         focusAreas: [...focusAreas],
+        gameDays:  [...gameDays],
+        drillDays: [...drillDays],
+        runDays:   [...runDays],
         gameHours:  document.getElementById('gameHours').value,
         drillHours: document.getElementById('drillHours').value,
         runHours:   document.getElementById('runHours').value,
     }));
+}
+
+// ─── Day Pickers ──────────────────────────────────────────────────────────────
+function renderDayPickers() {
+    renderDayPicker('gameDayBtns',  gameDays,  'game');
+    renderDayPicker('drillDayBtns', drillDays, 'drill');
+    renderDayPicker('runDayBtns',   runDays,   'running');
+}
+
+function renderDayPicker(elId, selectedSet, type) {
+    const el = document.getElementById(elId);
+    el.innerHTML = ALL_DAYS.map(d => `
+        <button class="day-btn ${selectedSet.has(d) ? 'active ' + type : ''}"
+                onclick="toggleDay('${d}','${type}',this)">${d}</button>
+    `).join('');
+}
+
+function toggleDay(day, type, btn) {
+    const map = { game: gameDays, drill: drillDays, running: runDays };
+    const set = map[type];
+    if (set.has(day)) { set.delete(day); btn.className = 'day-btn'; }
+    else              { set.add(day);    btn.className = `day-btn active ${type}`; }
+    saveState();
 }
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -377,25 +441,34 @@ function generateSchedule() {
     const drillH = parseFloat(document.getElementById('drillHours').value) || 0;
     const runH   = parseFloat(document.getElementById('runHours').value)   || 0;
 
-    const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const DRILL_DAYS = ['Monday','Tuesday','Friday'];
+    const dayMap = Object.fromEntries(FULL_DAYS.map(d => [d, []]));
 
-    const dayMap = Object.fromEntries(DAYS.map(d => [d, []]));
+    // Helper: short name → full name
+    const toFull = s => FULL_DAYS[ALL_DAYS.indexOf(s)];
 
-    if (gameH > 0) dayMap['Thursday'].push({ type: 'game', duration: gameH });
+    // Game: spread total hours across selected game days evenly
+    const gDays = [...gameDays].map(toFull).filter(Boolean);
+    if (gameH > 0 && gDays.length) {
+        const perDay = Math.round((gameH / gDays.length) * 4) / 4;
+        gDays.forEach(d => dayMap[d].push({ type: 'game', duration: perDay }));
+    }
 
+    // Drill: 1-hour sessions, fill selected drill days up to total hours
+    const dDays = shuffle([...drillDays].map(toFull).filter(Boolean));
     const numDrill = Math.round(drillH / 1);
-    shuffle([...DRILL_DAYS]).slice(0, Math.min(numDrill, DRILL_DAYS.length))
-        .forEach(day => dayMap[day].push({ type: 'drill', duration: 1 }));
-    if (numDrill > DRILL_DAYS.length) {
-        shuffle([...DRILL_DAYS]).slice(0, numDrill - DRILL_DAYS.length).forEach(day => {
-            if (dayMap[day].filter(s => s.type === 'drill').length < 2)
-                dayMap[day].push({ type: 'drill', duration: 1 });
+    dDays.slice(0, Math.min(numDrill, dDays.length))
+        .forEach(d => dayMap[d].push({ type: 'drill', duration: 1 }));
+    if (numDrill > dDays.length) {
+        shuffle([...dDays]).slice(0, numDrill - dDays.length).forEach(d => {
+            if (dayMap[d].filter(s => s.type === 'drill').length < 2)
+                dayMap[d].push({ type: 'drill', duration: 1 });
         });
     }
 
+    // Running: spread across selected run days
+    const rDays = [...runDays].map(toFull).filter(Boolean);
     const runSessions = splitTime(runH, 0.35, 0.6);
-    const runCands = ['Wednesday', ...shuffle(DAYS.filter(d => d !== 'Wednesday' && d !== 'Thursday' && dayMap[d].length < 2))];
+    const runCands = rDays.length ? rDays : FULL_DAYS.filter(d => dayMap[d].length < 2);
     runSessions.forEach((h, i) => dayMap[runCands[i % runCands.length]].push({ type: 'running', duration: h }));
 
     schedule = DAYS.map(day => ({
@@ -681,6 +754,7 @@ function getWeekLabel() {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadState();
 renderFocusTags();
+renderDayPickers();
 if (schedule.length) { renderSchedule(); renderStats(); }
 </script>
 </body>
