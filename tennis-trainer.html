@@ -253,7 +253,10 @@
     <div id="sectionTrainingLog" style="display:none">
 
         <div class="card" id="logCard">
-            <h2>Cumulative Training Log</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h2 style="margin-bottom:0">Cumulative Training Log</h2>
+                <button class="btn btn-outline btn-sm" onclick="clearTrainingLog()">Clear All History</button>
+            </div>
             <div id="logContent">
                 <div class="empty-state">
                     <div class="icon">📋</div>
@@ -647,6 +650,13 @@ function renderTrainingLog() {
     }).join('');
 
     el.innerHTML = summary + chart + `<div class="log-list">${entries}</div>`;
+}
+
+function clearTrainingLog() {
+    if (!confirm('Clear your entire training log? This cannot be undone.')) return;
+    trainingLog = [];
+    saveState();
+    renderTrainingLog();
 }
 
 function toggleLogEntry(i) {
