@@ -9,8 +9,6 @@
             --green: #2d6a4f;
             --green-light: #52b788;
             --green-pale: #d8f3dc;
-            --yellow: #f4a261;
-            --red: #e76f51;
             --bg: #f8f9fa;
             --card: #ffffff;
             --text: #212529;
@@ -29,9 +27,15 @@
         .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
         .card h2 { font-size: 0.85rem; font-weight: 700; color: var(--green); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.6px; }
 
+        /* ── Tabs ── */
+        .tab-bar { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 9px; border: none; border-radius: 7px; font-size: 0.88rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.15s; }
+        .tab.active { background: var(--green); color: white; }
+        .tab:hover:not(.active) { background: var(--green-pale); color: var(--green); }
+
+        /* ── Config ── */
         .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
         @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } }
-
         .input-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
         .input-group input[type="number"] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: white; color: var(--text); }
         .input-group input[type="number"]:focus { outline: none; border-color: var(--green-light); box-shadow: 0 0 0 3px rgba(82,183,136,0.15); }
@@ -47,12 +51,15 @@
         .focus-tag:not(.active) { opacity: 0.35; }
         .focus-tag.active  { box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
 
+        /* ── Buttons ── */
         .btn { padding: 11px 22px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
         .btn-primary { background: var(--green); color: white; }
         .btn-primary:hover { background: #1b4332; }
         .btn-sm { padding: 7px 14px; font-size: 0.8rem; border-radius: 6px; }
         .btn-outline { background: white; color: var(--green); border: 1.5px solid var(--green); }
         .btn-outline:hover { background: var(--green-pale); }
+        .btn-archive { background: #1b4332; color: white; }
+        .btn-archive:hover { background: #0d2b1f; }
 
         /* ── Schedule Grid ── */
         .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
@@ -98,23 +105,61 @@
 
         .rest-label { padding: 18px 8px; text-align: center; color: var(--muted); font-size: 0.78rem; font-style: italic; }
 
-        /* ── Stats ── */
+        /* ── This Week Stats ── */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
         .stat-box { text-align: center; padding: 12px 8px; background: var(--green-pale); border-radius: 8px; }
         .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--green); }
         .stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 
-        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--green-light); border-radius: 4px; transition: width 0.4s; }
 
-        .adherence-section h3 { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; }
-        .adherence-history { display: flex; gap: 6px; align-items: flex-end; height: 60px; padding-bottom: 20px; }
-        .adh-bar { flex: 1; border-radius: 3px 3px 0 0; position: relative; min-height: 4px; transition: height 0.3s; }
-        .adh-bar-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+        /* ── Training Log ── */
+        .log-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+        @media (max-width: 600px) { .log-summary { grid-template-columns: repeat(2, 1fr); } }
+        .log-stat { text-align: center; padding: 14px 8px; background: var(--green-pale); border-radius: 8px; }
+        .log-stat-num { font-size: 1.5rem; font-weight: 700; color: var(--green); }
+        .log-stat-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+
+        .chart-section { margin-bottom: 24px; }
+        .chart-section h3 { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 16px; }
+        .full-chart { display: flex; gap: 5px; align-items: flex-end; height: 80px; padding-bottom: 24px; overflow-x: auto; }
+        .chart-bar { min-width: 28px; border-radius: 3px 3px 0 0; position: relative; min-height: 4px; transition: height 0.3s; cursor: pointer; }
+        .chart-bar:hover { opacity: 0.8; }
+        .chart-bar-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--muted); white-space: nowrap; }
+        .chart-bar-pct { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+        .log-list { display: flex; flex-direction: column; gap: 10px; }
+        .log-entry { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .log-entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; background: white; transition: background 0.1s; }
+        .log-entry-header:hover { background: var(--green-pale); }
+        .log-week-label { font-size: 0.88rem; font-weight: 700; min-width: 70px; }
+        .log-pct-badge { font-size: 0.8rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+        .log-mini-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        .log-mini-fill { height: 100%; border-radius: 3px; }
+        .log-drills-summary { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+        .log-chevron { font-size: 0.75rem; color: var(--muted); transition: transform 0.2s; }
+        .log-entry.open .log-chevron { transform: rotate(90deg); }
+
+        .log-entry-body { display: none; padding: 12px 16px; background: #fafafa; border-top: 1px solid var(--border); }
+        .log-entry.open .log-entry-body { display: block; }
+
+        .log-breakdown { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .log-cat-pill { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .log-drill-list { font-size: 0.78rem; color: var(--muted); }
+        .log-drill-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+        .log-drill-row:last-child { border-bottom: none; }
+        .log-drill-done { color: var(--green-light); font-size: 0.7rem; }
+        .log-drill-skip { color: #e76f51; font-size: 0.7rem; }
+        .log-focus-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+        .log-focus-tag { padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; background: var(--green-pale); color: var(--green); }
 
         .empty-state { text-align: center; padding: 44px 20px; color: var(--muted); }
         .empty-state .icon { font-size: 2.8rem; margin-bottom: 12px; }
         .empty-state p { font-size: 0.9rem; }
+
+        .archive-banner { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .archive-banner p { font-size: 0.85rem; color: #856404; }
     </style>
 </head>
 <body>
@@ -138,15 +183,14 @@
             <div class="input-group">
                 <label>Drill &amp; Rally Hours</label>
                 <input type="number" id="drillHours" value="2" min="0" max="10" step="0.5">
-                <div class="input-note">1-hour slots on weekdays (Mon–Wed, Fri)</div>
+                <div class="input-note">1-hour slots on weekdays (Mon–Tue, Fri)</div>
             </div>
             <div class="input-group">
                 <label>Running Hours / Week</label>
                 <input type="number" id="runHours" value="1.5" min="0" max="10" step="0.5">
-                <div class="input-note">Spread across the week</div>
+                <div class="input-note">Fixed: Wednesday</div>
             </div>
         </div>
-
         <div style="margin-top: 16px;">
             <div style="font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;">
                 Focus Areas <span style="font-weight:400;text-transform:none;letter-spacing:0">(click to toggle)</span>
@@ -159,51 +203,66 @@
                 <div class="focus-tag footwork"        data-focus="footwork">Footwork</div>
             </div>
         </div>
-
         <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="generateSchedule()">Generate This Week's Plan</button>
             <button class="btn btn-outline btn-sm" onclick="resetChecks()">Reset Checklist</button>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="card" id="statsCard" style="display:none">
-        <h2>This Week's Progress</h2>
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-num" id="statDone">0</div>
-                <div class="stat-lbl">Drills Completed</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-num" id="statTotal">0</div>
-                <div class="stat-lbl">Total Drills</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-num" id="statPct">0%</div>
-                <div class="stat-lbl">Adherence</div>
-            </div>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill" id="mainProgress" style="width:0%"></div>
-        </div>
-        <div class="adherence-section">
-            <h3>Past 8 Weeks Adherence</h3>
-            <div style="overflow-x: auto;">
-                <div class="adherence-history" id="adherenceHistory"></div>
-            </div>
-        </div>
+    <!-- Tabs -->
+    <div class="tab-bar">
+        <button class="tab active" id="tabThisWeek"    onclick="switchTab('thisWeek')">This Week</button>
+        <button class="tab"        id="tabTrainingLog" onclick="switchTab('trainingLog')">Training Log</button>
     </div>
 
-    <!-- Schedule -->
-    <div class="card" id="scheduleCard">
-        <h2>Weekly Schedule</h2>
-        <div id="scheduleContent">
-            <div class="empty-state">
-                <div class="icon">🎾</div>
-                <p>Set your hours above and click <strong>Generate This Week's Plan</strong>.<br>
-                <span style="font-size:0.8rem">Click any drill to see instructions. Check it off when done.</span></p>
+    <!-- ══ THIS WEEK ══ -->
+    <div id="sectionThisWeek">
+
+        <!-- Progress -->
+        <div class="card" id="statsCard" style="display:none">
+            <h2>This Week's Progress</h2>
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-num" id="statDone">0</div><div class="stat-lbl">Drills Completed</div></div>
+                <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total Drills</div></div>
+                <div class="stat-box"><div class="stat-num" id="statPct">0%</div><div class="stat-lbl">Adherence</div></div>
+            </div>
+            <div class="progress-bar" style="margin-bottom:16px">
+                <div class="progress-fill" id="mainProgress" style="width:0%"></div>
+            </div>
+            <div id="archiveBanner" style="display:none" class="archive-banner">
+                <p>Done with this week? Archive it to your Training Log and start fresh.</p>
+                <button class="btn btn-archive btn-sm" onclick="archiveWeek()">Archive This Week</button>
             </div>
         </div>
+
+        <!-- Schedule -->
+        <div class="card">
+            <h2>Weekly Schedule</h2>
+            <div id="scheduleContent">
+                <div class="empty-state">
+                    <div class="icon">🎾</div>
+                    <p>Set your hours above and click <strong>Generate This Week's Plan</strong>.<br>
+                    <span style="font-size:0.8rem">Click any drill to see instructions. Check it off when done.</span></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══ TRAINING LOG ══ -->
+    <div id="sectionTrainingLog" style="display:none">
+
+        <div class="card" id="logCard">
+            <h2>Cumulative Training Log</h2>
+            <div id="logContent">
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p>No archived weeks yet.<br>
+                    <span style="font-size:0.8rem">Complete a week and hit <strong>Archive This Week</strong> to start your log.</span></p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -255,16 +314,18 @@ const DRILLS = {
 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let schedule = [];
-let checked  = {};
-let focusAreas = new Set(['volley', 'forehand', 'backhand']);
+let schedule    = [];
+let checked     = {};
+let trainingLog = [];   // archived weeks
+let focusAreas  = new Set(['volley', 'forehand', 'backhand']);
 
 function loadState() {
     try {
         const s = JSON.parse(localStorage.getItem('tennis-trainer') || '{}');
-        schedule   = s.schedule   || [];
-        checked    = s.checked    || {};
-        focusAreas = new Set(s.focusAreas || ['volley', 'forehand', 'backhand']);
+        schedule    = s.schedule    || [];
+        checked     = s.checked     || {};
+        trainingLog = s.trainingLog || [];
+        focusAreas  = new Set(s.focusAreas || ['volley', 'forehand', 'backhand']);
         if (s.gameHours  != null) document.getElementById('gameHours').value  = s.gameHours;
         if (s.drillHours != null) document.getElementById('drillHours').value = s.drillHours;
         if (s.runHours   != null) document.getElementById('runHours').value   = s.runHours;
@@ -273,7 +334,7 @@ function loadState() {
 
 function saveState() {
     localStorage.setItem('tennis-trainer', JSON.stringify({
-        schedule, checked,
+        schedule, checked, trainingLog,
         focusAreas: [...focusAreas],
         gameHours:  document.getElementById('gameHours').value,
         drillHours: document.getElementById('drillHours').value,
@@ -281,24 +342,30 @@ function saveState() {
     }));
 }
 
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.getElementById('sectionThisWeek').style.display    = tab === 'thisWeek'    ? '' : 'none';
+    document.getElementById('sectionTrainingLog').style.display = tab === 'trainingLog' ? '' : 'none';
+    document.getElementById('tabThisWeek').classList.toggle('active',    tab === 'thisWeek');
+    document.getElementById('tabTrainingLog').classList.toggle('active', tab === 'trainingLog');
+    if (tab === 'trainingLog') renderTrainingLog();
+}
+
 // ─── Focus Tags ───────────────────────────────────────────────────────────────
 document.getElementById('focusTags').addEventListener('click', e => {
     const tag = e.target.closest('.focus-tag');
     if (!tag) return;
     const f = tag.dataset.focus;
-    if (focusAreas.has(f)) {
-        if (focusAreas.size > 1) focusAreas.delete(f);
-    } else {
-        focusAreas.add(f);
-    }
+    if (focusAreas.has(f)) { if (focusAreas.size > 1) focusAreas.delete(f); }
+    else focusAreas.add(f);
     renderFocusTags();
     saveState();
 });
 
 function renderFocusTags() {
-    document.querySelectorAll('.focus-tag').forEach(t => {
-        t.classList.toggle('active', focusAreas.has(t.dataset.focus));
-    });
+    document.querySelectorAll('.focus-tag').forEach(t =>
+        t.classList.toggle('active', focusAreas.has(t.dataset.focus))
+    );
 }
 
 // ─── Schedule Generation ──────────────────────────────────────────────────────
@@ -308,45 +375,29 @@ function generateSchedule() {
     const runH   = parseFloat(document.getElementById('runHours').value)   || 0;
 
     const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const WEEKDAYS_NO_THU = ['Monday','Tuesday','Friday']; // drill slots (Wed reserved for running)
+    const DRILL_DAYS = ['Monday','Tuesday','Friday'];
 
     const dayMap = Object.fromEntries(DAYS.map(d => [d, []]));
 
-    // ── Game: always Thursday ──────────────────────────────────────────────────
-    if (gameH > 0) {
-        dayMap['Thursday'].push({ type: 'game', duration: gameH });
-    }
+    if (gameH > 0) dayMap['Thursday'].push({ type: 'game', duration: gameH });
 
-    // ── Drills: 1-hour slots on weekdays (Mon–Wed, Fri), as many as hours allow ─
-    const numDrillSessions = Math.round(drillH / 1); // each session = 1 hour
-    const drillDays = shuffle([...WEEKDAYS_NO_THU]).slice(0, Math.min(numDrillSessions, WEEKDAYS_NO_THU.length));
-    drillDays.forEach(day => {
-        dayMap[day].push({ type: 'drill', duration: 1 });
-    });
-    // If more drill sessions than available weekdays, stack a second session on a day
-    if (numDrillSessions > WEEKDAYS_NO_THU.length) {
-        const extra = numDrillSessions - WEEKDAYS_NO_THU.length;
-        shuffle([...WEEKDAYS_NO_THU]).slice(0, extra).forEach(day => {
+    const numDrill = Math.round(drillH / 1);
+    shuffle([...DRILL_DAYS]).slice(0, Math.min(numDrill, DRILL_DAYS.length))
+        .forEach(day => dayMap[day].push({ type: 'drill', duration: 1 }));
+    if (numDrill > DRILL_DAYS.length) {
+        shuffle([...DRILL_DAYS]).slice(0, numDrill - DRILL_DAYS.length).forEach(day => {
             if (dayMap[day].filter(s => s.type === 'drill').length < 2)
                 dayMap[day].push({ type: 'drill', duration: 1 });
         });
     }
 
-    // ── Running: fixed to Wednesday, overflow to other light days ─────────────
     const runSessions = splitTime(runH, 0.35, 0.6);
     const runCands = ['Wednesday', ...shuffle(DAYS.filter(d => d !== 'Wednesday' && d !== 'Thursday' && dayMap[d].length < 2))];
-    runSessions.forEach((h, i) => {
-        const day = runCands[i % runCands.length];
-        dayMap[day].push({ type: 'running', duration: h });
-    });
+    runSessions.forEach((h, i) => dayMap[runCands[i % runCands.length]].push({ type: 'running', duration: h }));
 
     schedule = DAYS.map(day => ({
         day,
-        sessions: dayMap[day].map(sess => ({
-            ...sess,
-            drills: buildDrills(sess),
-            id: uid(),
-        })),
+        sessions: dayMap[day].map(sess => ({ ...sess, drills: buildDrills(sess), id: uid() })),
     }));
 
     checked = {};
@@ -357,8 +408,7 @@ function generateSchedule() {
 
 function splitTime(total, minH, maxH) {
     if (total <= 0) return [];
-    const out = [];
-    let rem = total;
+    const out = []; let rem = total;
     while (rem > 0.1) {
         const chunk = Math.min(rem, minH + Math.random() * (maxH - minH));
         out.push(Math.round(chunk * 4) / 4);
@@ -369,57 +419,38 @@ function splitTime(total, minH, maxH) {
 
 function buildDrills(sess) {
     const totalMin = sess.duration * 60;
-
     if (sess.type === 'game') {
-        const drills = [{
-            id: uid(), category: 'game',
-            name: `Match Play (${fmtH(sess.duration)})`,
-            duration: Math.round(totalMin * 0.95),
-            desc: `Play sets with deliberate focus: at least once per service game, look for a ball to approach on and finish at net. After the session, note: did you win or lose the majority of net points? That tells you whether the practice is working.`,
-        }];
-        if (focusAreas.has('volley') && totalMin >= 90) {
-            const d = pick(DRILLS.volley);
-            drills.push({ ...d, id: uid(), category: 'volley' });
-        }
+        const drills = [{ id: uid(), category: 'game', name: `Match Play (${fmtH(sess.duration)})`, duration: Math.round(totalMin * 0.95),
+            desc: `Play sets with deliberate focus: at least once per service game, look for a ball to approach on and finish at net. After the session, note: did you win or lose the majority of net points?` }];
+        if (focusAreas.has('volley') && totalMin >= 90) drills.push({ ...pick(DRILLS.volley), id: uid(), category: 'volley' });
         return drills;
     }
-
     if (sess.type === 'running') {
         const d = totalMin >= 25 ? { ...DRILLS.running[0], duration: Math.round(totalMin) } : DRILLS.running[1];
         return [{ ...d, id: uid(), category: 'running' }];
     }
-
-    // Drill session — weighted fill
-    const weights = buildWeights();
-    const pool = shuffle([...weights]);
-    const drills = [];
-    let usedMin = 0;
-
+    const pool = shuffle([...buildWeights()]);
+    const drills = []; let usedMin = 0;
     for (const cat of pool) {
         if (usedMin >= totalMin - 5) break;
-        const lib = DRILLS[cat];
-        if (!lib) continue;
+        const lib = DRILLS[cat]; if (!lib) continue;
         const d = pick(lib);
-        if (usedMin + d.duration <= totalMin + 5) {
-            drills.push({ ...d, id: uid(), category: cat });
-            usedMin += d.duration;
-        }
+        if (usedMin + d.duration <= totalMin + 5) { drills.push({ ...d, id: uid(), category: cat }); usedMin += d.duration; }
     }
     return drills;
 }
 
 function buildWeights() {
     const w = [];
-    // Volley = primary weakness → highest weight
-    if (focusAreas.has('volley'))   for (let i = 0; i < 4; i++) w.push('volley');
-    if (focusAreas.has('forehand')) for (let i = 0; i < 2; i++) w.push('forehand');
-    if (focusAreas.has('backhand')) for (let i = 0; i < 2; i++) w.push('backhand');
-    if (focusAreas.has('serve'))    for (let i = 0; i < 2; i++) w.push('serve');
-    if (focusAreas.has('footwork')) for (let i = 0; i < 2; i++) w.push('footwork');
-    return w.length ? w : ['forehand', 'backhand'];
+    if (focusAreas.has('volley'))   for (let i=0;i<4;i++) w.push('volley');
+    if (focusAreas.has('forehand')) for (let i=0;i<2;i++) w.push('forehand');
+    if (focusAreas.has('backhand')) for (let i=0;i<2;i++) w.push('backhand');
+    if (focusAreas.has('serve'))    for (let i=0;i<2;i++) w.push('serve');
+    if (focusAreas.has('footwork')) for (let i=0;i<2;i++) w.push('footwork');
+    return w.length ? w : ['forehand','backhand'];
 }
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+// ─── Render Schedule ──────────────────────────────────────────────────────────
 function renderSchedule() {
     const el = document.getElementById('scheduleContent');
     if (!schedule.length) {
@@ -430,77 +461,51 @@ function renderSchedule() {
 }
 
 function renderDay({ day, sessions }) {
-    const short = day.slice(0, 3);
-    const empty = !sessions.length;
-    const type  = sessions.length > 1 ? 'mixed' : (sessions[0]?.type || 'rest');
-    return `
-    <div class="day-card">
+    const short = day.slice(0,3), empty = !sessions.length;
+    const type = sessions.length > 1 ? 'mixed' : (sessions[0]?.type || 'rest');
+    return `<div class="day-card">
         <div class="day-header ${empty ? 'rest' : type}">
             <span>${short}</span>
-            ${!empty ? `<span style="font-size:0.68rem;opacity:0.85">${sessions.map(s => fmtH(s.duration)).join(' + ')}</span>` : ''}
+            ${!empty ? `<span style="font-size:0.68rem;opacity:0.85">${sessions.map(s=>fmtH(s.duration)).join(' + ')}</span>` : ''}
         </div>
-        ${empty
-            ? `<div class="rest-label">Rest day</div>`
-            : `<div class="day-sessions">${sessions.map(renderSession).join('')}</div>`
-        }
+        ${empty ? `<div class="rest-label">Rest day</div>`
+                : `<div class="day-sessions">${sessions.map(renderSession).join('')}</div>`}
     </div>`;
 }
 
 function renderSession(sess) {
-    const label = { game: 'Match Play', drill: 'Drill Session', running: 'Running' }[sess.type] || sess.type;
-    return `
-    <div class="session-block">
-        <div class="session-title">${label}</div>
-        ${sess.drills.map(d => renderDrill(d, sess.id)).join('')}
-    </div>`;
+    const label = { game:'Match Play', drill:'Drill Session', running:'Running' }[sess.type] || sess.type;
+    return `<div class="session-block"><div class="session-title">${label}</div>${sess.drills.map(d=>renderDrill(d,sess.id)).join('')}</div>`;
 }
 
 function renderDrill(drill, sessId) {
-    const key  = `${sessId}_${drill.id}`;
-    const done = !!checked[key];
-    return `
-    <div class="drill-item ${done ? 'done' : ''}" onclick="handleDrillClick(event, '${key}', this)">
+    const key = `${sessId}_${drill.id}`, done = !!checked[key];
+    return `<div class="drill-item ${done?'done':''}" onclick="handleDrillClick(event,'${key}',this)">
         <div class="drill-checkbox"></div>
         <div class="drill-info">
             <div class="drill-name">${drill.name}</div>
-            <div class="drill-meta">
-                <span class="tag-badge tag-${drill.category}">${drill.category}</span>
-                &nbsp;${drill.duration} min
-            </div>
+            <div class="drill-meta"><span class="tag-badge tag-${drill.category}">${drill.category}</span>&nbsp;${drill.duration} min</div>
             <div class="drill-desc">${drill.desc}</div>
         </div>
     </div>`;
 }
 
-// ─── Interaction ──────────────────────────────────────────────────────────────
 function handleDrillClick(e, key, el) {
-    // Click on checkbox = toggle done
     if (e.target.closest('.drill-checkbox')) {
         checked[key] = !checked[key];
         el.classList.toggle('done', checked[key]);
-        saveState();
-        renderStats();
-        return;
+        saveState(); renderStats(); return;
     }
-    // Click elsewhere = expand/collapse description
     el.classList.toggle('expanded');
 }
 
-function resetChecks() {
-    checked = {};
-    saveState();
-    renderSchedule();
-    renderStats();
-}
+function resetChecks() { checked = {}; saveState(); renderSchedule(); renderStats(); }
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
+// ─── This Week Stats ──────────────────────────────────────────────────────────
 function renderStats() {
-    const allKeys = schedule.flatMap(d =>
-        d.sessions.flatMap(s => s.drills.map(dr => `${s.id}_${dr.id}`))
-    );
-    const total = allKeys.length;
-    const done  = allKeys.filter(k => checked[k]).length;
-    const pct   = total ? Math.round(done / total * 100) : 0;
+    const allKeys = schedule.flatMap(d => d.sessions.flatMap(s => s.drills.map(dr => `${s.id}_${dr.id}`)));
+    const total = allKeys.length, done = allKeys.filter(k => checked[k]).length;
+    const pct = total ? Math.round(done / total * 100) : 0;
 
     document.getElementById('statsCard').style.display = total ? '' : 'none';
     document.getElementById('statDone').textContent  = done;
@@ -508,67 +513,165 @@ function renderStats() {
     document.getElementById('statPct').textContent   = pct + '%';
     document.getElementById('mainProgress').style.width = pct + '%';
 
-    updateAdherenceHistory(pct);
-    renderAdherenceHistory();
+    // Show archive banner once any drills are checked
+    const banner = document.getElementById('archiveBanner');
+    banner.style.display = done > 0 ? '' : 'none';
 }
 
-function getHistoryKey() { return 'tennis-adh-history'; }
+// ─── Archive Week ─────────────────────────────────────────────────────────────
+function archiveWeek() {
+    if (!schedule.length) return;
+    if (!confirm('Archive this week to your Training Log? This will clear the current schedule so you can start a fresh week.')) return;
 
-function updateAdherenceHistory(pct) {
-    const week = getWeekLabel();
-    let hist = JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
-    const ex = hist.find(h => h.week === week);
-    if (ex) ex.pct = pct;
-    else hist.push({ week, pct });
-    hist = hist.slice(-8);
-    localStorage.setItem(getHistoryKey(), JSON.stringify(hist));
+    // Build drill list with done/skip state and category breakdown
+    const allDrills = [];
+    const breakdown = {};
+    schedule.forEach(day => {
+        day.sessions.forEach(sess => {
+            sess.drills.forEach(dr => {
+                const key = `${sess.id}_${dr.id}`;
+                const done = !!checked[key];
+                allDrills.push({ name: dr.name, category: dr.category, duration: dr.duration, done });
+                if (!breakdown[dr.category]) breakdown[dr.category] = { done: 0, total: 0 };
+                breakdown[dr.category].total++;
+                if (done) breakdown[dr.category].done++;
+            });
+        });
+    });
+
+    const total = allDrills.length, done = allDrills.filter(d => d.done).length;
+    const entry = {
+        id: uid(),
+        weekLabel: getWeekLabel(),
+        archivedAt: new Date().toISOString().slice(0, 10),
+        focusAreas: [...focusAreas],
+        gameHours:  parseFloat(document.getElementById('gameHours').value) || 0,
+        drillHours: parseFloat(document.getElementById('drillHours').value) || 0,
+        runHours:   parseFloat(document.getElementById('runHours').value) || 0,
+        totalDrills: total,
+        completedDrills: done,
+        adherencePct: total ? Math.round(done / total * 100) : 0,
+        breakdown,
+        drills: allDrills,
+    };
+
+    trainingLog.unshift(entry); // newest first
+    schedule = []; checked = {};
+    saveState();
+    renderSchedule();
+    renderStats();
+    renderTrainingLog();
+    switchTab('trainingLog');
 }
 
-function renderAdherenceHistory() {
-    const hist = JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
-    const maxH = 48;
-    const el = document.getElementById('adherenceHistory');
-    if (!hist.length) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--muted)">No history yet — complete drills to build your record.</span>'; return; }
-    el.innerHTML = hist.map(h => {
-        const color = h.pct >= 75 ? '#52b788' : h.pct >= 40 ? '#f4a261' : '#e76f51';
-        return `<div class="adh-bar" style="height:${Math.max(4, h.pct / 100 * maxH)}px;background:${color}" title="${h.week}: ${h.pct}%">
-            <span class="adh-bar-label">${h.week}</span>
+// ─── Training Log Render ──────────────────────────────────────────────────────
+function renderTrainingLog() {
+    const el = document.getElementById('logContent');
+    if (!trainingLog.length) {
+        el.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No archived weeks yet.<br><span style="font-size:0.8rem">Complete a week and hit <strong>Archive This Week</strong> to start your log.</span></p></div>`;
+        return;
+    }
+
+    const totalWeeks    = trainingLog.length;
+    const avgAdherence  = Math.round(trainingLog.reduce((s,e) => s + e.adherencePct, 0) / totalWeeks);
+    const totalDrills   = trainingLog.reduce((s,e) => s + e.completedDrills, 0);
+    const totalHours    = trainingLog.reduce((s,e) => s + (e.gameHours||0) + (e.drillHours||0) + (e.runHours||0), 0);
+
+    const summary = `
+    <div class="log-summary">
+        <div class="log-stat"><div class="log-stat-num">${totalWeeks}</div><div class="log-stat-lbl">Weeks Tracked</div></div>
+        <div class="log-stat"><div class="log-stat-num">${avgAdherence}%</div><div class="log-stat-lbl">Avg Adherence</div></div>
+        <div class="log-stat"><div class="log-stat-num">${totalDrills}</div><div class="log-stat-lbl">Drills Completed</div></div>
+        <div class="log-stat"><div class="log-stat-num">${totalHours.toFixed(1)}h</div><div class="log-stat-lbl">Total Hours</div></div>
+    </div>`;
+
+    // Full chart (all weeks, oldest→newest)
+    const chartData = [...trainingLog].reverse();
+    const maxBarH = 64;
+    const bars = chartData.map(e => {
+        const color = e.adherencePct >= 75 ? '#52b788' : e.adherencePct >= 40 ? '#f4a261' : '#e76f51';
+        return `<div class="chart-bar" style="height:${Math.max(4, e.adherencePct/100*maxBarH)}px;background:${color}" title="${e.weekLabel}: ${e.adherencePct}%">
+            <span class="chart-bar-pct">${e.adherencePct}%</span>
+            <span class="chart-bar-label">${e.weekLabel}</span>
         </div>`;
     }).join('');
+
+    const chart = `
+    <div class="chart-section">
+        <h3>Adherence Over Time</h3>
+        <div class="full-chart">${bars}</div>
+    </div>`;
+
+    // Week entries list
+    const entries = trainingLog.map((e, i) => {
+        const pctColor = e.adherencePct >= 75 ? '#52b788' : e.adherencePct >= 40 ? '#f4a261' : '#e76f51';
+        const fillColor = pctColor;
+
+        const breakdownPills = Object.entries(e.breakdown).map(([cat, v]) =>
+            `<span class="log-cat-pill tag-${cat}" style="border:1px solid var(--border)">${cat}: ${v.done}/${v.total}</span>`
+        ).join('');
+
+        const drillRows = e.drills.map(d =>
+            `<div class="log-drill-row">
+                <span class="${d.done ? 'log-drill-done' : 'log-drill-skip'}">${d.done ? '✓' : '✗'}</span>
+                <span class="tag-badge tag-${d.category}" style="flex-shrink:0">${d.category}</span>
+                <span>${d.name}</span>
+                <span style="color:var(--muted);font-size:0.7rem;margin-left:auto">${d.duration}m</span>
+            </div>`
+        ).join('');
+
+        const focusTags = e.focusAreas.map(f =>
+            `<span class="log-focus-tag">${f}</span>`
+        ).join('');
+
+        return `
+        <div class="log-entry" id="logEntry${i}">
+            <div class="log-entry-header" onclick="toggleLogEntry(${i})">
+                <span class="log-week-label">Wk of ${e.weekLabel}</span>
+                <span class="log-pct-badge" style="background:${pctColor}20;color:${pctColor}">${e.adherencePct}%</span>
+                <div class="log-mini-bar"><div class="log-mini-fill" style="width:${e.adherencePct}%;background:${fillColor}"></div></div>
+                <span class="log-drills-summary">${e.completedDrills}/${e.totalDrills} drills</span>
+                <span class="log-chevron">▶</span>
+            </div>
+            <div class="log-entry-body">
+                <div class="log-breakdown">${breakdownPills}</div>
+                <div class="log-focus-tags">${focusTags}</div>
+                <div style="margin-top:10px;font-size:0.75rem;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">Drill Detail</div>
+                <div class="log-drill-list">${drillRows}</div>
+                <div style="margin-top:8px;font-size:0.72rem;color:var(--muted)">
+                    ${fmtH(e.gameHours)} game &nbsp;·&nbsp; ${fmtH(e.drillHours)} drills &nbsp;·&nbsp; ${fmtH(e.runHours)} running
+                    &nbsp;·&nbsp; archived ${e.archivedAt}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = summary + chart + `<div class="log-list">${entries}</div>`;
+}
+
+function toggleLogEntry(i) {
+    document.getElementById(`logEntry${i}`).classList.toggle('open');
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 function shuffle(arr) {
     const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
+    for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
     return a;
 }
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function uid()     { return Math.random().toString(36).slice(2, 9); }
-function fmtH(h)   {
-    const hrs = Math.floor(h);
-    const min = Math.round((h - hrs) * 60);
-    if (hrs && min) return `${hrs}h ${min}m`;
-    if (hrs) return `${hrs}h`;
-    return `${min}m`;
-}
+function pick(arr)  { return arr[Math.floor(Math.random()*arr.length)]; }
+function uid()      { return Math.random().toString(36).slice(2,9); }
+function fmtH(h)    { const hr=Math.floor(h), mn=Math.round((h-hr)*60); return hr&&mn?`${hr}h ${mn}m`:hr?`${hr}h`:`${mn}m`; }
 function getWeekLabel() {
-    const d = new Date();
-    const mon = new Date(d);
-    mon.setDate(d.getDate() - (d.getDay() + 6) % 7);
-    return mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const d = new Date(), mon = new Date(d);
+    mon.setDate(d.getDate() - (d.getDay()+6)%7);
+    return mon.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadState();
 renderFocusTags();
-if (schedule.length) {
-    renderSchedule();
-    renderStats();
-}
+if (schedule.length) { renderSchedule(); renderStats(); }
 </script>
 </body>
 </html>
