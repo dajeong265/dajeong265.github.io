@@ -471,7 +471,7 @@ function generateSchedule() {
     const runCands = rDays.length ? rDays : FULL_DAYS.filter(d => dayMap[d].length < 2);
     runSessions.forEach((h, i) => dayMap[runCands[i % runCands.length]].push({ type: 'running', duration: h }));
 
-    schedule = DAYS.map(day => ({
+    schedule = FULL_DAYS.map(day => ({
         day,
         sessions: dayMap[day].map(sess => ({ ...sess, drills: buildDrills(sess), id: uid() })),
     }));
