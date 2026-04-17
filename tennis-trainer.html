@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Trainer</title>
+    <style>
+        :root {
+            --green: #2d6a4f;
+            --green-light: #52b788;
+            --green-pale: #d8f3dc;
+            --yellow: #f4a261;
+            --red: #e76f51;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #212529;
+            --muted: #6c757d;
+            --border: #dee2e6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        header { background: var(--green); color: white; padding: 20px 24px; }
+        header h1 { font-size: 1.4rem; font-weight: 700; }
+        header p { font-size: 0.85rem; opacity: 0.8; margin-top: 2px; }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+        .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+        .card h2 { font-size: 0.85rem; font-weight: 700; color: var(--green); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.6px; }
+
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } }
+
+        .input-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .input-group input[type="number"] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: white; color: var(--text); }
+        .input-group input[type="number"]:focus { outline: none; border-color: var(--green-light); box-shadow: 0 0 0 3px rgba(82,183,136,0.15); }
+        .input-note { font-size: 0.73rem; color: var(--muted); margin-top: 4px; }
+
+        .focus-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .focus-tag { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; user-select: none; }
+        .focus-tag.volley  { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .focus-tag.forehand{ background: #d1ecf1; color: #0c5460; border-color: #17a2b8; }
+        .focus-tag.backhand{ background: #d4edda; color: #155724; border-color: #28a745; }
+        .focus-tag.serve   { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .focus-tag.footwork{ background: #e2d9f3; color: #4a1d96; border-color: #7c3aed; }
+        .focus-tag:not(.active) { opacity: 0.35; }
+        .focus-tag.active  { box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+
+        .btn { padding: 11px 22px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+        .btn-primary { background: var(--green); color: white; }
+        .btn-primary:hover { background: #1b4332; }
+        .btn-sm { padding: 7px 14px; font-size: 0.8rem; border-radius: 6px; }
+        .btn-outline { background: white; color: var(--green); border: 1.5px solid var(--green); }
+        .btn-outline:hover { background: var(--green-pale); }
+
+        /* ── Schedule Grid ── */
+        .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        @media (max-width: 750px) { .week-grid { grid-template-columns: 1fr; } }
+
+        .day-card { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+        .day-header { padding: 9px 12px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header.rest    { background: #f1f3f5; color: var(--muted); }
+        .day-header.game    { background: #1b4332; color: white; }
+        .day-header.drill   { background: var(--green); color: white; }
+        .day-header.running { background: #2c7da0; color: white; }
+        .day-header.mixed   { background: #6d6875; color: white; }
+
+        .day-sessions { padding: 8px; }
+        .session-block { margin-bottom: 10px; }
+        .session-block:last-child { margin-bottom: 0; }
+        .session-title { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; padding: 0 2px; }
+
+        .drill-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 8px; border-radius: 6px; margin-bottom: 3px; cursor: pointer; transition: background 0.1s; }
+        .drill-item:hover { background: var(--green-pale); }
+        .drill-item.done { opacity: 0.5; }
+        .drill-item.done .drill-name { text-decoration: line-through; }
+
+        .drill-checkbox { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--border); background: white; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .drill-item.done .drill-checkbox { background: var(--green-light); border-color: var(--green-light); }
+        .drill-checkbox::after { content: '✓'; font-size: 10px; color: white; display: none; }
+        .drill-item.done .drill-checkbox::after { display: block; }
+
+        .drill-info { flex: 1; }
+        .drill-name { font-size: 0.82rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+        .drill-meta { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+        .drill-desc { font-size: 0.72rem; color: #495057; margin-top: 4px; line-height: 1.45; background: #f8f9fa; border-radius: 4px; padding: 5px 7px; display: none; }
+        .drill-item.expanded .drill-desc { display: block; }
+
+        .tag-badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+        .tag-volley  { background: #fff3cd; color: #856404; }
+        .tag-forehand{ background: #d1ecf1; color: #0c5460; }
+        .tag-backhand{ background: #d4edda; color: #155724; }
+        .tag-running { background: #e2d9f3; color: #4a1d96; }
+        .tag-game    { background: #1b4332; color: white; }
+        .tag-serve   { background: #f8d7da; color: #721c24; }
+        .tag-footwork{ background: #e2d9f3; color: #4a1d96; }
+
+        .rest-label { padding: 18px 8px; text-align: center; color: var(--muted); font-size: 0.78rem; font-style: italic; }
+
+        /* ── Stats ── */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+        .stat-box { text-align: center; padding: 12px 8px; background: var(--green-pale); border-radius: 8px; }
+        .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--green); }
+        .stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        .progress-fill { height: 100%; background: var(--green-light); border-radius: 4px; transition: width 0.4s; }
+
+        .adherence-section h3 { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; }
+        .adherence-history { display: flex; gap: 6px; align-items: flex-end; height: 60px; padding-bottom: 20px; }
+        .adh-bar { flex: 1; border-radius: 3px 3px 0 0; position: relative; min-height: 4px; transition: height 0.3s; }
+        .adh-bar-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+
+        .empty-state { text-align: center; padding: 44px 20px; color: var(--muted); }
+        .empty-state .icon { font-size: 2.8rem; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Tennis Trainer</h1>
+    <p>Weekly training planner &amp; drill checklist</p>
+</header>
+
+<div class="container">
+
+    <!-- Config -->
+    <div class="card">
+        <h2>Weekly Training Setup</h2>
+        <div class="config-grid">
+            <div class="input-group">
+                <label>Game Hours / Week</label>
+                <input type="number" id="gameHours" value="4" min="0" max="20" step="0.5">
+                <div class="input-note">Fixed: Thursday evening (4 hrs)</div>
+            </div>
+            <div class="input-group">
+                <label>Drill &amp; Rally Hours</label>
+                <input type="number" id="drillHours" value="2" min="0" max="10" step="0.5">
+                <div class="input-note">1-hour slots on weekdays (Mon–Wed, Fri)</div>
+            </div>
+            <div class="input-group">
+                <label>Running Hours / Week</label>
+                <input type="number" id="runHours" value="1.5" min="0" max="10" step="0.5">
+                <div class="input-note">Spread across the week</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <div style="font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;">
+                Focus Areas <span style="font-weight:400;text-transform:none;letter-spacing:0">(click to toggle)</span>
+            </div>
+            <div class="focus-row" id="focusTags">
+                <div class="focus-tag volley active"   data-focus="volley">Volley ★</div>
+                <div class="focus-tag forehand active" data-focus="forehand">Forehand</div>
+                <div class="focus-tag backhand active" data-focus="backhand">Backhand</div>
+                <div class="focus-tag serve"           data-focus="serve">Serve</div>
+                <div class="focus-tag footwork"        data-focus="footwork">Footwork</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="generateSchedule()">Generate This Week's Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="resetChecks()">Reset Checklist</button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card" id="statsCard" style="display:none">
+        <h2>This Week's Progress</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-num" id="statDone">0</div>
+                <div class="stat-lbl">Drills Completed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-lbl">Total Drills</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num" id="statPct">0%</div>
+                <div class="stat-lbl">Adherence</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="mainProgress" style="width:0%"></div>
+        </div>
+        <div class="adherence-section">
+            <h3>Past 8 Weeks Adherence</h3>
+            <div style="overflow-x: auto;">
+                <div class="adherence-history" id="adherenceHistory"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="card" id="scheduleCard">
+        <h2>Weekly Schedule</h2>
+        <div id="scheduleContent">
+            <div class="empty-state">
+                <div class="icon">🎾</div>
+                <p>Set your hours above and click <strong>Generate This Week's Plan</strong>.<br>
+                <span style="font-size:0.8rem">Click any drill to see instructions. Check it off when done.</span></p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ─── Drill Library ────────────────────────────────────────────────────────────
+const DRILLS = {
+    volley: [
+        { name: "Punch Volley Consistency", duration: 15, desc: "Stand at net, partner feeds balls at medium pace. Focus on firm wrist, short backswing, punch through contact. 20 balls each side — FH and BH volley." },
+        { name: "Net Approach + Finish", duration: 20, desc: "Start at baseline. Partner hits a short ball — approach, close to net, and put away with a volley. Reset and repeat. 15 reps. Vary the approach direction." },
+        { name: "Volley-Volley Exchange", duration: 15, desc: "Both players at net, rapid-fire crosscourt exchange. Focus on soft hands, early racket prep, and staying balanced. Keep a streak count." },
+        { name: "Drop Volley Touch", duration: 10, desc: "Partner drives medium-pace balls at you at net. Absorb the pace and redirect as a drop volley short. 10 reps per side. Feel matters more than speed here." },
+        { name: "High Volley Putaway", duration: 10, desc: "Partner lobs softly to your forehand side. Step in, hit aggressive high FH volley into open court. Alternate sides. 20 reps." },
+        { name: "Half Volley Recovery", duration: 15, desc: "Partner drives low at your feet as you transition toward net. Practice half-volley pickup — stay low, short follow-through, recover position. 15 reps." },
+        { name: "Crosscourt Volley Pattern", duration: 20, desc: "You at net, partner at baseline. Partner feeds to alternating sides — FH volley crosscourt, BH volley crosscourt. 30 feeds. Focus on placement over power." },
+    ],
+    forehand: [
+        { name: "Cross-Court FH Rally", duration: 20, desc: "Sustained crosscourt rally with a partner. Focus on depth — aim past the service line — and consistency. Count consecutive balls without error. Best streak is your score." },
+        { name: "Inside-Out Forehand", duration: 15, desc: "Move around your BH corner and crack an inside-out forehand to the deuce court. Partner feeds from mid-court. 20 reps from both sides of center." },
+        { name: "Topspin Depth Drill", duration: 15, desc: "Rally with partner, but every forehand must land past the service line. If one drops short, reset streak to zero. Target: 10 consecutive deep forehands." },
+        { name: "Short Ball Attack FH", duration: 15, desc: "Partner feeds from the net post area — short, medium height balls. Step in and attack to the open court. 20 reps. Mix crosscourt and down-the-line." },
+        { name: "FH Passing Shot", duration: 12, desc: "Partner at net in aggressive volley position. You hit forehand passing shots — both DTL and crosscourt. 20 reps. Aim at the sideline, not at your partner." },
+        { name: "FH Warm-up Sequence", duration: 10, desc: "5 minutes of easy cooperative forehands crosscourt, then 5 minutes of directing — call the target before each ball. Builds directional intention from warm-up." },
+    ],
+    backhand: [
+        { name: "Cross-Court BH Rally", duration: 20, desc: "Sustained crosscourt backhand rally. Focus on consistency and depth over pace. If you use a two-hander, keep the off hand loading through contact." },
+        { name: "Backhand Slice Consistency", duration: 15, desc: "Hit 15 consecutive slice backhands with depth (past service line) and low bounce. Vary between aggressive and defensive slice. Good for approach shots." },
+        { name: "Two-Hand Topspin Drive", duration: 15, desc: "Drive backhands with topspin to deep ad court. Partner feeds from mid-court. 20 reps. Focus on hip rotation and staying balanced through the shot." },
+        { name: "Backhand DTL", duration: 12, desc: "Setup ball to your forehand, then redirect with a backhand DTL passing shot. 20 reps. This is one of the hardest patterns — don't try to overhit." },
+        { name: "BH Return of Serve", duration: 15, desc: "Partner serves at moderate pace to your BH side. Compact unit turn, meet the ball early, direct it deep crosscourt. 20 returns. Track how many land deep." },
+        { name: "BH Approach + Net", duration: 15, desc: "Partner feeds short to BH side. Hit an approach shot (slice or drive), close to net, and put away with a volley. Combines BH with your volley work. 15 reps." },
+    ],
+    serve: [
+        { name: "Serve Placement Targets", duration: 20, desc: "Place cones at T, body, and wide for both deuce and ad courts. Serve 5 to each target, track how many hit. Switch sides halfway. Placement over pace." },
+        { name: "Second Serve Consistency", duration: 15, desc: "Only hit second serves (heavy topspin or kick). Goal: 17/20 in. Relax the arm, swing up and across. Abort if you're muscling — start over." },
+        { name: "Serve + 1 Pattern", duration: 20, desc: "Decide your pattern before you serve. E.g. serve wide deuce → forehand crosscourt. Serve T ad → backhand inside-in. 20 reps. Court awareness, not just serving." },
+    ],
+    footwork: [
+        { name: "Agility Ladder Sequence", duration: 15, desc: "Icky shuffle, 2-in-2-out, and lateral shuffle, 4 sets of each. Keep steps light and quick. Don't look down — feel the spacing." },
+        { name: "Court Sprint T-Drill", duration: 15, desc: "Baseline → net → baseline → left alley → center → right alley → net. 8 reps with 30s rest. Time your runs and aim to beat your last time." },
+        { name: "Split-Step Reaction", duration: 12, desc: "Partner points randomly left or right as you're mid-split-step. React and move to that side. 20 reps per direction. If you're slow, your split-step timing is off." },
+        { name: "Shadow Footwork", duration: 15, desc: "Coach or partner calls positions (FH, BH, wide BH, approach, lob). You move, set up, and shadow the swing — no ball. 3 sets of 10. Builds automatic movement." },
+    ],
+    running: [
+        { name: "Steady Aerobic Run", duration: 30, desc: "Easy jog at a conversational pace — you should be able to speak in short sentences. Builds the aerobic base that keeps you moving in the third set." },
+        { name: "Interval Sprints", duration: 20, desc: "30 seconds at hard effort, 60 seconds walk. Repeat 8 rounds. Simulates the burst-and-recover rhythm of actual points. Don't go flat-out — 85% effort." },
+        { name: "Court Footwork Circuit", duration: 20, desc: "Combine ladder drills, baseline-to-net sprints, and side-to-side shuffles with minimal rest. 3 full rounds. This doubles as footwork training." },
+    ],
+};
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let schedule = [];
+let checked  = {};
+let focusAreas = new Set(['volley', 'forehand', 'backhand']);
+
+function loadState() {
+    try {
+        const s = JSON.parse(localStorage.getItem('tennis-trainer') || '{}');
+        schedule   = s.schedule   || [];
+        checked    = s.checked    || {};
+        focusAreas = new Set(s.focusAreas || ['volley', 'forehand', 'backhand']);
+        if (s.gameHours  != null) document.getElementById('gameHours').value  = s.gameHours;
+        if (s.drillHours != null) document.getElementById('drillHours').value = s.drillHours;
+        if (s.runHours   != null) document.getElementById('runHours').value   = s.runHours;
+    } catch(e) {}
+}
+
+function saveState() {
+    localStorage.setItem('tennis-trainer', JSON.stringify({
+        schedule, checked,
+        focusAreas: [...focusAreas],
+        gameHours:  document.getElementById('gameHours').value,
+        drillHours: document.getElementById('drillHours').value,
+        runHours:   document.getElementById('runHours').value,
+    }));
+}
+
+// ─── Focus Tags ───────────────────────────────────────────────────────────────
+document.getElementById('focusTags').addEventListener('click', e => {
+    const tag = e.target.closest('.focus-tag');
+    if (!tag) return;
+    const f = tag.dataset.focus;
+    if (focusAreas.has(f)) {
+        if (focusAreas.size > 1) focusAreas.delete(f);
+    } else {
+        focusAreas.add(f);
+    }
+    renderFocusTags();
+    saveState();
+});
+
+function renderFocusTags() {
+    document.querySelectorAll('.focus-tag').forEach(t => {
+        t.classList.toggle('active', focusAreas.has(t.dataset.focus));
+    });
+}
+
+// ─── Schedule Generation ──────────────────────────────────────────────────────
+function generateSchedule() {
+    const gameH  = parseFloat(document.getElementById('gameHours').value)  || 0;
+    const drillH = parseFloat(document.getElementById('drillHours').value) || 0;
+    const runH   = parseFloat(document.getElementById('runHours').value)   || 0;
+
+    const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const WEEKDAYS_NO_THU = ['Monday','Tuesday','Friday']; // drill slots (Wed reserved for running)
+
+    const dayMap = Object.fromEntries(DAYS.map(d => [d, []]));
+
+    // ── Game: always Thursday ──────────────────────────────────────────────────
+    if (gameH > 0) {
+        dayMap['Thursday'].push({ type: 'game', duration: gameH });
+    }
+
+    // ── Drills: 1-hour slots on weekdays (Mon–Wed, Fri), as many as hours allow ─
+    const numDrillSessions = Math.round(drillH / 1); // each session = 1 hour
+    const drillDays = shuffle([...WEEKDAYS_NO_THU]).slice(0, Math.min(numDrillSessions, WEEKDAYS_NO_THU.length));
+    drillDays.forEach(day => {
+        dayMap[day].push({ type: 'drill', duration: 1 });
+    });
+    // If more drill sessions than available weekdays, stack a second session on a day
+    if (numDrillSessions > WEEKDAYS_NO_THU.length) {
+        const extra = numDrillSessions - WEEKDAYS_NO_THU.length;
+        shuffle([...WEEKDAYS_NO_THU]).slice(0, extra).forEach(day => {
+            if (dayMap[day].filter(s => s.type === 'drill').length < 2)
+                dayMap[day].push({ type: 'drill', duration: 1 });
+        });
+    }
+
+    // ── Running: fixed to Wednesday, overflow to other light days ─────────────
+    const runSessions = splitTime(runH, 0.35, 0.6);
+    const runCands = ['Wednesday', ...shuffle(DAYS.filter(d => d !== 'Wednesday' && d !== 'Thursday' && dayMap[d].length < 2))];
+    runSessions.forEach((h, i) => {
+        const day = runCands[i % runCands.length];
+        dayMap[day].push({ type: 'running', duration: h });
+    });
+
+    schedule = DAYS.map(day => ({
+        day,
+        sessions: dayMap[day].map(sess => ({
+            ...sess,
+            drills: buildDrills(sess),
+            id: uid(),
+        })),
+    }));
+
+    checked = {};
+    saveState();
+    renderSchedule();
+    renderStats();
+}
+
+function splitTime(total, minH, maxH) {
+    if (total <= 0) return [];
+    const out = [];
+    let rem = total;
+    while (rem > 0.1) {
+        const chunk = Math.min(rem, minH + Math.random() * (maxH - minH));
+        out.push(Math.round(chunk * 4) / 4);
+        rem -= chunk;
+    }
+    return out;
+}
+
+function buildDrills(sess) {
+    const totalMin = sess.duration * 60;
+
+    if (sess.type === 'game') {
+        const drills = [{
+            id: uid(), category: 'game',
+            name: `Match Play (${fmtH(sess.duration)})`,
+            duration: Math.round(totalMin * 0.95),
+            desc: `Play sets with deliberate focus: at least once per service game, look for a ball to approach on and finish at net. After the session, note: did you win or lose the majority of net points? That tells you whether the practice is working.`,
+        }];
+        if (focusAreas.has('volley') && totalMin >= 90) {
+            const d = pick(DRILLS.volley);
+            drills.push({ ...d, id: uid(), category: 'volley' });
+        }
+        return drills;
+    }
+
+    if (sess.type === 'running') {
+        const d = totalMin >= 25 ? { ...DRILLS.running[0], duration: Math.round(totalMin) } : DRILLS.running[1];
+        return [{ ...d, id: uid(), category: 'running' }];
+    }
+
+    // Drill session — weighted fill
+    const weights = buildWeights();
+    const pool = shuffle([...weights]);
+    const drills = [];
+    let usedMin = 0;
+
+    for (const cat of pool) {
+        if (usedMin >= totalMin - 5) break;
+        const lib = DRILLS[cat];
+        if (!lib) continue;
+        const d = pick(lib);
+        if (usedMin + d.duration <= totalMin + 5) {
+            drills.push({ ...d, id: uid(), category: cat });
+            usedMin += d.duration;
+        }
+    }
+    return drills;
+}
+
+function buildWeights() {
+    const w = [];
+    // Volley = primary weakness → highest weight
+    if (focusAreas.has('volley'))   for (let i = 0; i < 4; i++) w.push('volley');
+    if (focusAreas.has('forehand')) for (let i = 0; i < 2; i++) w.push('forehand');
+    if (focusAreas.has('backhand')) for (let i = 0; i < 2; i++) w.push('backhand');
+    if (focusAreas.has('serve'))    for (let i = 0; i < 2; i++) w.push('serve');
+    if (focusAreas.has('footwork')) for (let i = 0; i < 2; i++) w.push('footwork');
+    return w.length ? w : ['forehand', 'backhand'];
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderSchedule() {
+    const el = document.getElementById('scheduleContent');
+    if (!schedule.length) {
+        el.innerHTML = `<div class="empty-state"><div class="icon">🎾</div><p>Generate a plan to get started.</p></div>`;
+        return;
+    }
+    el.innerHTML = `<div class="week-grid">${schedule.map(renderDay).join('')}</div>`;
+}
+
+function renderDay({ day, sessions }) {
+    const short = day.slice(0, 3);
+    const empty = !sessions.length;
+    const type  = sessions.length > 1 ? 'mixed' : (sessions[0]?.type || 'rest');
+    return `
+    <div class="day-card">
+        <div class="day-header ${empty ? 'rest' : type}">
+            <span>${short}</span>
+            ${!empty ? `<span style="font-size:0.68rem;opacity:0.85">${sessions.map(s => fmtH(s.duration)).join(' + ')}</span>` : ''}
+        </div>
+        ${empty
+            ? `<div class="rest-label">Rest day</div>`
+            : `<div class="day-sessions">${sessions.map(renderSession).join('')}</div>`
+        }
+    </div>`;
+}
+
+function renderSession(sess) {
+    const label = { game: 'Match Play', drill: 'Drill Session', running: 'Running' }[sess.type] || sess.type;
+    return `
+    <div class="session-block">
+        <div class="session-title">${label}</div>
+        ${sess.drills.map(d => renderDrill(d, sess.id)).join('')}
+    </div>`;
+}
+
+function renderDrill(drill, sessId) {
+    const key  = `${sessId}_${drill.id}`;
+    const done = !!checked[key];
+    return `
+    <div class="drill-item ${done ? 'done' : ''}" onclick="handleDrillClick(event, '${key}', this)">
+        <div class="drill-checkbox"></div>
+        <div class="drill-info">
+            <div class="drill-name">${drill.name}</div>
+            <div class="drill-meta">
+                <span class="tag-badge tag-${drill.category}">${drill.category}</span>
+                &nbsp;${drill.duration} min
+            </div>
+            <div class="drill-desc">${drill.desc}</div>
+        </div>
+    </div>`;
+}
+
+// ─── Interaction ──────────────────────────────────────────────────────────────
+function handleDrillClick(e, key, el) {
+    // Click on checkbox = toggle done
+    if (e.target.closest('.drill-checkbox')) {
+        checked[key] = !checked[key];
+        el.classList.toggle('done', checked[key]);
+        saveState();
+        renderStats();
+        return;
+    }
+    // Click elsewhere = expand/collapse description
+    el.classList.toggle('expanded');
+}
+
+function resetChecks() {
+    checked = {};
+    saveState();
+    renderSchedule();
+    renderStats();
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function renderStats() {
+    const allKeys = schedule.flatMap(d =>
+        d.sessions.flatMap(s => s.drills.map(dr => `${s.id}_${dr.id}`))
+    );
+    const total = allKeys.length;
+    const done  = allKeys.filter(k => checked[k]).length;
+    const pct   = total ? Math.round(done / total * 100) : 0;
+
+    document.getElementById('statsCard').style.display = total ? '' : 'none';
+    document.getElementById('statDone').textContent  = done;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPct').textContent   = pct + '%';
+    document.getElementById('mainProgress').style.width = pct + '%';
+
+    updateAdherenceHistory(pct);
+    renderAdherenceHistory();
+}
+
+function getHistoryKey() { return 'tennis-adh-history'; }
+
+function updateAdherenceHistory(pct) {
+    const week = getWeekLabel();
+    let hist = JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
+    const ex = hist.find(h => h.week === week);
+    if (ex) ex.pct = pct;
+    else hist.push({ week, pct });
+    hist = hist.slice(-8);
+    localStorage.setItem(getHistoryKey(), JSON.stringify(hist));
+}
+
+function renderAdherenceHistory() {
+    const hist = JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
+    const maxH = 48;
+    const el = document.getElementById('adherenceHistory');
+    if (!hist.length) { el.innerHTML = '<span style="font-size:0.78rem;color:var(--muted)">No history yet — complete drills to build your record.</span>'; return; }
+    el.innerHTML = hist.map(h => {
+        const color = h.pct >= 75 ? '#52b788' : h.pct >= 40 ? '#f4a261' : '#e76f51';
+        return `<div class="adh-bar" style="height:${Math.max(4, h.pct / 100 * maxH)}px;background:${color}" title="${h.week}: ${h.pct}%">
+            <span class="adh-bar-label">${h.week}</span>
+        </div>`;
+    }).join('');
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function uid()     { return Math.random().toString(36).slice(2, 9); }
+function fmtH(h)   {
+    const hrs = Math.floor(h);
+    const min = Math.round((h - hrs) * 60);
+    if (hrs && min) return `${hrs}h ${min}m`;
+    if (hrs) return `${hrs}h`;
+    return `${min}m`;
+}
+function getWeekLabel() {
+    const d = new Date();
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - (d.getDay() + 6) % 7);
+    return mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadState();
+renderFocusTags();
+if (schedule.length) {
+    renderSchedule();
+    renderStats();
+}
+</script>
+</body>
+</html>
