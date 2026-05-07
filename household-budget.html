@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Household Budget Tracker – DAHYEON JEONG</title>
+    <link rel="canonical" href="https://dahyeonjeong.com/household-budget.html">
+    <style>
+        :root {
+            --green:         #2d6a4f;
+            --green-dark:    #1b4332;
+            --green-mid:     #40916c;
+            --green-light:   #52b788;
+            --green-pale:    #d8f3dc;
+            --income-row:    #f0faf4;
+            --income-total:  #b7e4c7;
+            --expense-row:   #fff8f0;
+            --invest-row:    #fff3e0;
+            --expense-total: #ffd8a8;
+            --savings-row:   #f5f0ff;
+            --balance-row:   #d8f3dc;
+            --bg:            #f8f9fa;
+            --text:          #212529;
+            --muted:         #6c757d;
+            --border:        #dee2e6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topnav {
+            background: var(--green-dark);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topnav a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.83rem;
+            font-weight: 600;
+        }
+        .topnav a:hover { color: white; }
+
+        .app-header {
+            background: var(--green);
+            color: white;
+            padding: 18px 20px 16px;
+        }
+        .app-header h1 { font-size: 1.25rem; font-weight: 700; }
+        .app-header p  { font-size: 0.8rem; opacity: 0.8; margin-top: 4px; }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
+
+        .hint {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        .scroll-hint {
+            font-size: 0.75rem;
+            color: var(--green-mid);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: none;
+        }
+        @media (max-width: 960px) { .scroll-hint { display: block; } }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .btn {
+            padding: 9px 18px;
+            border-radius: 7px;
+            border: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-outline {
+            background: white;
+            color: var(--green);
+            border: 1.5px solid var(--green);
+        }
+        .btn-outline:hover { background: var(--green-pale); }
+        .btn-danger {
+            background: white;
+            color: #c0392b;
+            border: 1.5px solid #c0392b;
+        }
+        .btn-danger:hover { background: #fdf0ee; }
+        .save-flash {
+            font-size: 0.78rem;
+            color: var(--green);
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .save-flash.on { opacity: 1; }
+
+        .tbl-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: white;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1000px;
+        }
+
+        .thead-year th {
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 6px 8px;
+            background: var(--green-dark);
+        }
+        .thead-year th.y27 { background: var(--green-mid); }
+
+        .thead-months th {
+            background: var(--green);
+            color: white;
+            font-size: 0.73rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px 6px;
+            white-space: nowrap;
+        }
+        .thead-months th.col-cat  { text-align: left; min-width: 84px; }
+        .thead-months th.col-item { text-align: left; min-width: 165px; }
+        .thead-months th.col-mon  { min-width: 60px; }
+        .thead-months th.col-th-total { background: var(--green-dark); min-width: 72px; }
+
+        .row-sec td {
+            background: #1b4332;
+            color: white;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 7px 12px;
+            letter-spacing: 0.4px;
+        }
+
+        td { border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+
+        .row-income  td { background: var(--income-row); }
+        .row-expense td { background: var(--expense-row); }
+        .row-invest  td { background: var(--invest-row); }
+        .row-savings td { background: var(--savings-row); }
+
+        td.col-cat {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+        td.col-item {
+            font-size: 0.78rem;
+            padding: 4px 10px;
+            line-height: 1.35;
+        }
+        .lbl-income  { color: #2d6a4f; }
+        .lbl-expense { color: #d4721a; }
+        .lbl-invest  { color: #9c5a00; }
+        .lbl-savings { color: #6d28d9; }
+
+        .row-total-income  td { background: var(--income-total); }
+        .row-total-expense td { background: var(--expense-total); }
+        .row-balance       td { background: var(--balance-row); }
+
+        td.total-label {
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 8px 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .cell-inp {
+            display: block;
+            width: 100%;
+            min-width: 54px;
+            border: none;
+            background: transparent;
+            text-align: right;
+            font-size: 0.88rem;
+            font-family: inherit;
+            color: var(--text);
+            padding: 9px 6px;
+            min-height: 38px;
+            -moz-appearance: textfield;
+        }
+        .cell-inp::-webkit-outer-spin-button,
+        .cell-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .cell-inp:focus {
+            outline: 2px solid var(--green-light);
+            border-radius: 4px;
+            background: white;
+        }
+
+        td.cell-calc {
+            text-align: right;
+            font-size: 0.85rem;
+            padding: 9px 6px;
+            white-space: nowrap;
+        }
+        td.cell-tot {
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 9px 8px;
+            white-space: nowrap;
+        }
+        td.col-total-cell { background-color: rgba(0,0,0,0.04) !important; }
+        .neg { color: #c0392b; }
+        .pos { color: #1b4332; }
+
+        .footnote {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topnav">
+    <a href="index.html">← DAHYEON JEONG</a>
+    <a href="playground.html">Playground</a>
+</div>
+
+<div class="app-header">
+    <h1>Household Budget Tracker</h1>
+    <p>Jun 2026 – May 2027 &nbsp;·&nbsp; Tap any cell to enter a number</p>
+</div>
+
+<div class="container">
+    <p class="hint">Values are saved automatically in your browser. Totals update as you type.</p>
+
+    <div class="toolbar">
+        <button class="btn btn-outline" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+        <span class="save-flash" id="saveFlash">✓ Saved</span>
+    </div>
+
+    <p class="scroll-hint">← Swipe left / right to see all months →</p>
+
+    <div class="tbl-wrap">
+        <table id="tbl">
+            <thead>
+                <tr class="thead-year">
+                    <th colspan="2"></th>
+                    <th colspan="7">2026</th>
+                    <th colspan="5" class="y27">2027</th>
+                    <th>TOTAL</th>
+                </tr>
+                <tr class="thead-months">
+                    <th class="col-cat">Category</th>
+                    <th class="col-item">Item</th>
+                    <th class="col-mon">Jun</th>
+                    <th class="col-mon">Jul</th>
+                    <th class="col-mon">Aug</th>
+                    <th class="col-mon">Sep</th>
+                    <th class="col-mon">Oct</th>
+                    <th class="col-mon">Nov</th>
+                    <th class="col-mon">Dec</th>
+                    <th class="col-mon">Jan</th>
+                    <th class="col-mon">Feb</th>
+                    <th class="col-mon">Mar</th>
+                    <th class="col-mon">Apr</th>
+                    <th class="col-mon">May</th>
+                    <th class="col-th-total">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+    <p class="footnote">Monthly Balance = Total Income − Total Expenses &amp; Investment − Savings</p>
+</div>
+
+<script>
+const N = 12;
+const KEY = 'hh_budget_2026_27_v1';
+
+const ROWS = [
+    { type:'section', label:'1.  INCOME  (Money coming in)' },
+    { type:'data', id:'i1', cat:'Income',     catCls:'lbl-income',  rowCls:'row-income',  item:'Crop Harvest income' },
+    { type:'data', id:'i2', cat:'Income',     catCls:'lbl-income',  rowCls:'row-income',  item:'Business income' },
+    { type:'data', id:'i3', cat:'Income',     catCls:'lbl-income',  rowCls:'row-income',  item:'Wage work (permanent / casual)' },
+    { type:'data', id:'i4', cat:'Income',     catCls:'lbl-income',  rowCls:'row-income',  item:'Transfers (family, NGO, govt)' },
+    { type:'total', id:'tI', label:'TOTAL INCOME',                  rowCls:'row-total-income',  src:['i1','i2','i3','i4'] },
+
+    { type:'section', label:'2.  EXPENSES + INVESTMENT' },
+    { type:'data', id:'e1', cat:'Expenses',   catCls:'lbl-expense', rowCls:'row-expense', item:'Food' },
+    { type:'data', id:'e2', cat:'Expenses',   catCls:'lbl-expense', rowCls:'row-expense', item:'Non-food (school, clothes, transport)' },
+    { type:'data', id:'v1', cat:'Investment', catCls:'lbl-invest',  rowCls:'row-invest',  item:'Seeds, fertilizer, hired labour' },
+    { type:'data', id:'v2', cat:'Investment', catCls:'lbl-invest',  rowCls:'row-invest',  item:'Livestock or business items' },
+    { type:'total', id:'tE', label:'TOTAL EXPENSES + INVESTMENT',   rowCls:'row-total-expense', src:['e1','e2','v1','v2'] },
+
+    { type:'section', label:'3.  SAVINGS  (Money set aside)' },
+    { type:'data', id:'s1', cat:'Savings',    catCls:'lbl-savings', rowCls:'row-savings', item:'Emergency fund (health, accidents, crop failure)' },
+
+    { type:'balance', id:'bal', label:'MONTHLY BALANCE  (Income – Expenses – Savings)', rowCls:'row-balance' },
+];
+
+const INC = ['i1','i2','i3','i4'];
+const EXP = ['e1','e2','v1','v2'];
+
+let data = {};
+try { const raw = localStorage.getItem(KEY); if (raw) data = JSON.parse(raw); } catch {}
+
+function v(id, m) { return parseFloat((data[id] || {})[m]) || 0; }
+function rowSum(id) { let s = 0; for (let m = 0; m < N; m++) s += v(id, m); return s; }
+function srcSum(src, m) { return src.reduce((s, id) => s + v(id, m), 0); }
+function fmt(n) { return n ? n.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''; }
+function hasMonth(m) {
+    return ROWS.filter(r => r.type === 'data').some(r => {
+        const val = (data[r.id] || {})[m];
+        return val !== undefined && val !== null && val !== '';
+    });
+}
+
+function build() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+
+    ROWS.forEach(row => {
+        const tr = document.createElement('tr');
+
+        if (row.type === 'section') {
+            tr.className = 'row-sec';
+            tr.innerHTML = `<td colspan="${N + 3}">${row.label}</td>`;
+        }
+        else if (row.type === 'data') {
+            tr.className = row.rowCls;
+            let cells = '';
+            for (let m = 0; m < N; m++) {
+                const stored = (data[row.id] || {})[m];
+                cells += `<td><input type="number" class="cell-inp" data-id="${row.id}" data-m="${m}" value="${stored !== undefined ? stored : ''}" inputmode="decimal" placeholder=""></td>`;
+            }
+            tr.innerHTML = `
+                <td class="col-cat ${row.catCls}">${row.cat}</td>
+                <td class="col-item">${row.item}</td>
+                ${cells}
+                <td class="cell-tot col-total-cell" id="rt_${row.id}">${fmt(rowSum(row.id))}</td>`;
+        }
+        else if (row.type === 'total') {
+            tr.className = row.rowCls;
+            let cells = '';
+            for (let m = 0; m < N; m++) {
+                cells += `<td class="cell-calc" id="tc_${row.id}_${m}">${fmt(srcSum(row.src, m))}</td>`;
+            }
+            const grand = row.src.reduce((s, id) => s + rowSum(id), 0);
+            tr.innerHTML = `
+                <td class="total-label" colspan="2">${row.label}</td>
+                ${cells}
+                <td class="cell-tot col-total-cell" id="rt_${row.id}">${fmt(grand)}</td>`;
+        }
+        else if (row.type === 'balance') {
+            tr.className = row.rowCls;
+            let cells = '';
+            let grandBal = 0;
+            let anyData = false;
+            for (let m = 0; m < N; m++) {
+                const bal = srcSum(INC, m) - srcSum(EXP, m) - v('s1', m);
+                const hd = hasMonth(m);
+                if (hd) anyData = true;
+                grandBal += bal;
+                cells += `<td class="cell-calc ${bal < 0 ? 'neg' : 'pos'}" id="bc_${m}">${hd ? bal.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</td>`;
+            }
+            tr.innerHTML = `
+                <td class="total-label" colspan="2">${row.label}</td>
+                ${cells}
+                <td class="cell-tot col-total-cell ${grandBal < 0 ? 'neg' : 'pos'}" id="rt_bal">${anyData ? grandBal.toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</td>`;
+        }
+
+        tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.cell-inp').forEach(inp => inp.addEventListener('input', onInput));
+}
+
+function onInput(e) {
+    const id = e.target.dataset.id;
+    const m  = parseInt(e.target.dataset.m);
+    if (!data[id]) data[id] = {};
+    const raw = e.target.value;
+    if (raw === '' || raw === null) delete data[id][m];
+    else data[id][m] = parseFloat(raw);
+    recalc();
+    persist();
+}
+
+function recalc() {
+    ROWS.forEach(row => {
+        if (row.type === 'data') {
+            document.getElementById('rt_' + row.id).textContent = fmt(rowSum(row.id));
+        }
+        else if (row.type === 'total') {
+            let grand = 0;
+            for (let m = 0; m < N; m++) {
+                const s = srcSum(row.src, m);
+                document.getElementById(`tc_${row.id}_${m}`).textContent = fmt(s);
+                grand += s;
+            }
+            document.getElementById('rt_' + row.id).textContent = fmt(grand);
+        }
+        else if (row.type === 'balance') {
+            let grandBal = 0, anyData = false;
+            for (let m = 0; m < N; m++) {
+                const bal = srcSum(INC, m) - srcSum(EXP, m) - v('s1', m);
+                const hd = hasMonth(m);
+                if (hd) anyData = true;
+                grandBal += bal;
+                const cell = document.getElementById('bc_' + m);
+                cell.textContent = hd ? bal.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '';
+                cell.className = `cell-calc ${bal < 0 ? 'neg' : 'pos'}`;
+            }
+            const rt = document.getElementById('rt_bal');
+            rt.textContent = anyData ? grandBal.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '';
+            rt.className = `cell-tot col-total-cell ${grandBal < 0 ? 'neg' : 'pos'}`;
+        }
+    });
+}
+
+function persist() {
+    try {
+        localStorage.setItem(KEY, JSON.stringify(data));
+        const fl = document.getElementById('saveFlash');
+        fl.classList.add('on');
+        setTimeout(() => fl.classList.remove('on'), 1200);
+    } catch {}
+}
+
+function clearAll() {
+    if (!confirm('Clear all entered values? This cannot be undone.')) return;
+    data = {};
+    try { localStorage.removeItem(KEY); } catch {}
+    build();
+}
+
+function exportCSV() {
+    const ML = ['Jun 2026','Jul 2026','Aug 2026','Sep 2026','Oct 2026','Nov 2026','Dec 2026',
+                'Jan 2027','Feb 2027','Mar 2027','Apr 2027','May 2027'];
+    const lines = [['Category','Item',...ML,'TOTAL'].join(',')];
+
+    ROWS.forEach(row => {
+        if (row.type === 'section') {
+            lines.push([`"${row.label}"`,...Array(N+1).fill('')].join(','));
+        } else if (row.type === 'data') {
+            const vals = Array.from({length:N}, (_,m) => v(row.id,m));
+            lines.push([row.cat, `"${row.item}"`, ...vals, rowSum(row.id)].join(','));
+        } else if (row.type === 'total') {
+            const vals = Array.from({length:N}, (_,m) => srcSum(row.src,m));
+            lines.push(['', `"${row.label}"`, ...vals, vals.reduce((a,b)=>a+b,0)].join(','));
+        } else if (row.type === 'balance') {
+            const vals = Array.from({length:N}, (_,m) => srcSum(INC,m) - srcSum(EXP,m) - v('s1',m));
+            lines.push(['', `"${row.label}"`, ...vals, vals.reduce((a,b)=>a+b,0)].join(','));
+        }
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'household_budget_2026_27.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+build();
+</script>
+</body>
+</html>
