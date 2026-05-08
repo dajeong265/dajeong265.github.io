@@ -304,12 +304,72 @@ tfoot td:first-child {
   font-size: 1.2rem; pointer-events: none;
 }
 
-@media (max-width: 580px) {
-  .lane-lbl { width: 70px; font-size: .74rem; }
-  .cell-body { min-width: 115px; }
-  .score-inp { width: 55px; }
-  .horse-emoji { font-size: 2.4rem; }
-  .lane-outer { height: 55px; }
+/* ── 4TH PLACE MEDAL ── */
+.medal-4 {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: .82em; height: .82em; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c0c0c0, #6e6e6e);
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,.25), 0 2px 5px rgba(0,0,0,.2);
+  vertical-align: middle;
+}
+.medal-4 span { font-size: .48em; font-weight: 900; color: #fff; line-height: 1; }
+
+/* ── RESPONSIVE ── */
+/* prevent iOS zoom on input focus */
+@media (max-width: 768px) {
+  .score-inp { font-size: 16px; }
+  .fold-btn  { height: 36px; min-width: 64px; font-size: .7rem; touch-action: manipulation; }
+  .out-btn, .step-btn, .count-btn, .ghost-btn, .add-round-btn,
+  .save-archive-btn, .play-btn, .gwang-add-btn, .gwang-remove-btn { touch-action: manipulation; }
+  .archive-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .lane-rank { font-size: 4rem; width: 64px; height: 64px; }
+}
+
+@media (max-width: 680px) {
+  #gameScreen { padding: .75rem; }
+  .lane-lbl  { width: 88px; font-size: 1rem; }
+  .lane-outer { height: 62px; }
+  .lane-rank  { font-size: 3.4rem; width: 54px; height: 62px; }
+  .horse-emoji { font-size: 2.6rem; }
+  .race-track-wrap { gap: 3.1rem; padding-top: 60px; }
+  .flag-pole { height: 18px; }
+  .finish-line { top: -5px; bottom: -5px; }
+  .finish-flag { top: -24px; font-size: 1.1rem; }
+  .race-controls { gap: .65rem; }
+  .archive-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  #gameScreen { padding: .5rem; }
+  .game-hdr { padding-bottom: 1rem; }
+  .game-hdr h1 { font-size: 1.1rem; }
+  .sec-title { font-size: .95rem; }
+  .lane-lbl  { width: 70px; font-size: .85rem; }
+  .lane-outer { height: 52px; }
+  .lane-rank  { font-size: 2.8rem; width: 46px; height: 52px; }
+  .horse-emoji { font-size: 2.1rem; }
+  .race-track-wrap { gap: 2.7rem; padding-top: 50px; padding-left: .5rem; padding-right: .5rem; }
+  .flag-name  { font-size: .68rem; }
+  .flag-score { font-size: .6rem; }
+  .flag-pole  { height: 14px; }
+  .horse-flag { padding: .16rem .38rem; }
+  .finish-line { top: -4px; bottom: -4px; }
+  .finish-flag { top: -20px; font-size: 1rem; }
+  .score-inp  { width: 58px; }
+  .cell-body  { min-width: 108px; gap: .2rem; }
+  .race-controls { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  #raceSlider { max-width: 100%; width: 100%; }
+  .play-btn   { width: 100%; justify-content: center; }
+  .round-badge { align-self: center; }
+  .save-archive-btn { font-size: .8rem; padding: .4rem .75rem; }
+  .archive-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 360px) {
+  .lane-lbl { width: 58px; font-size: .78rem; }
+  .cell-body { min-width: 96px; }
+  .score-inp { width: 52px; }
+  .fold-btn  { min-width: 52px; font-size: .65rem; }
 }
 
 /* ── ARCHIVE ── */
@@ -466,7 +526,11 @@ tfoot td:first-child {
 
 <script>
 const COLORS = ['#e74c3c','#2980b9','#27ae60','#8e44ad'];
-const RANKS  = ['🥇','🥈','🥉','🏅'];
+const RANKS  = ['🥇','🥈','🥉'];
+function rankHtml(rank) {
+  if (rank <= 3) return RANKS[rank-1];
+  return `<span class="medal-4"><span>${rank}</span></span>`;
+}
 
 const G = { playerCount:3, roundCount:5, players:[], rounds:[] };
 
@@ -790,7 +854,7 @@ function initRaceTrack() {
           <span class="horse-emoji" id="horse-emoji-${pi}">🐎</span>
         </div>
       </div>
-      <div class="lane-rank" id="rank-${pi}">🏅</div>`;
+      <div class="lane-rank" id="rank-${pi}"></div>`;
     track.appendChild(lane);
   });
 }
@@ -815,7 +879,7 @@ function updateRacePositions(upTo) {
     const rk = document.getElementById(`rank-${pi}`);
     if (hw) hw.style.left = `${positions[pi]}%`;
     if (hs) hs.textContent = `${sign}${scores[pi]}`;   // white from CSS, no override
-    if (rk) rk.textContent = RANKS[rank-1] || '🏅';
+    if (rk) rk.innerHTML = rankHtml(rank);
   });
 }
 
@@ -969,7 +1033,7 @@ function renderArchive() {
     return;
   }
 
-  const MEDALS = ['🥇','🥈','🥉','🏅'];
+  const MEDALS = ['🥇','🥈','🥉','<span class="medal-4"><span>4</span></span>'];
   const RCLS   = ['r1','r2','r3','r4'];
   list.innerHTML = '';
 
