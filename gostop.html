@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎴 고스톱 점수판</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f2efe8;
+  color: #2c2c2c;
+  min-height: 100vh;
+}
+
+/* ── SETUP ── */
+#setupScreen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 1.5rem;
+  background: linear-gradient(135deg, #e8f5e9 0%, #f9fbe7 50%, #e8f5e9 100%);
+}
+.setup-card {
+  background: white; border: 1px solid #d4e8d4;
+  border-radius: 20px; padding: 2.5rem;
+  width: 100%; max-width: 460px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.1);
+}
+.setup-card h1 { font-size: 2.4rem; text-align: center; margin-bottom: .2rem; }
+.sub { text-align: center; color: #888; font-size: .88rem; margin-bottom: 2rem; }
+.form-section { margin-bottom: 1.5rem; }
+.form-section > label {
+  display: block; font-size: .78rem; text-transform: uppercase;
+  letter-spacing: .06em; color: #888; margin-bottom: .65rem;
+}
+.count-btns { display: flex; gap: .5rem; }
+.count-btn {
+  flex: 1; padding: .7rem; border: 1px solid #ddd; border-radius: 10px;
+  background: #f8f8f8; color: #333; font-size: 1.05rem; font-weight: 600;
+  cursor: pointer; transition: all .18s;
+}
+.count-btn:hover { background: #eee; }
+.count-btn.active { background: #e8f5e9; border-color: #2ecc71; color: #1a8a3a; font-weight: 700; }
+.player-inputs { display: flex; flex-direction: column; gap: .45rem; }
+.pinput-row { display: flex; align-items: center; gap: .7rem; }
+.color-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.pinput-row input {
+  flex: 1; padding: .55rem .8rem; background: #f8f8f8; border: 1px solid #ddd;
+  border-radius: 8px; color: #333; font-size: .92rem; outline: none;
+}
+.pinput-row input:focus { border-color: #aaa; background: white; }
+.stepper { display: flex; align-items: center; gap: .8rem; }
+.step-btn {
+  width: 36px; height: 36px; border: 1px solid #ddd; border-radius: 8px;
+  background: #f8f8f8; color: #333; font-size: 1.2rem; cursor: pointer; transition: background .15s;
+}
+.step-btn:hover { background: #eee; }
+.step-num { font-size: 1.5rem; font-weight: 700; min-width: 2rem; text-align: center; }
+.start-btn {
+  width: 100%; padding: .95rem;
+  background: linear-gradient(135deg, #1a8a3a, #2ecc71);
+  border: none; border-radius: 12px; color: #fff;
+  font-size: 1.05rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(46,204,113,.3);
+  transition: transform .1s, box-shadow .2s; margin-top: .5rem;
+}
+.start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(46,204,113,.4); }
+.start-btn:active { transform: none; }
+
+/* ── GAME ── */
+#gameScreen { padding: 1.2rem; max-width: 1150px; margin: 0 auto; }
+.game-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .8rem 0 1.4rem;
+}
+.game-hdr h1 { font-size: 1.4rem; }
+.ghost-btn {
+  padding: .45rem .9rem; border: 1px solid #ccc; border-radius: 8px;
+  background: white; color: #555; cursor: pointer; font-size: .85rem; transition: background .15s;
+}
+.ghost-btn:hover { background: #f5f5f5; }
+.sec { margin-bottom: 2.5rem; }
+.sec-title { font-size: 1.1rem; font-weight: 700; margin-bottom: .85rem; display: flex; align-items: center; gap: .5rem; }
+.legend { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: .9rem; font-size: .8rem; }
+.legend span { padding: .25rem .65rem; border-radius: 20px; background: #f5f5f5; border: 1px solid #e0e0e0; color: #555; }
+
+/* ── TABLE ── */
+.tbl-wrap {
+  overflow-x: auto; border-radius: 12px; border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+}
+table { width: 100%; border-collapse: collapse; background: white; }
+thead tr { background: #f7f5ef; }
+thead th {
+  padding: .8rem .5rem; font-size: .88rem; font-weight: 600;
+  border-bottom: 2px solid #e8e4d8; white-space: nowrap; text-align: center; color: #444;
+}
+thead th:first-child { padding-left: .8rem; text-align: left; width: 100px; }
+.th-inner { display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.th-inner .th-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+
+tbody tr:nth-child(even) { background: #faf9f5; }
+tbody tr:hover { background: #f5f2eb; }
+tbody tr.row-error { background: #fff0f0 !important; border-left: 3px solid #e74c3c; }
+tbody tr.gwang-row td { background: #fffef5 !important; }
+tbody tr.gwang-row.row-error td { background: #fff0f0 !important; }
+
+td {
+  padding: .38rem .3rem;
+  border-bottom: 1px solid #ede9de;
+  text-align: center; vertical-align: middle;
+}
+td.round-td {
+  padding-left: .8rem; text-align: left;
+  width: 100px; vertical-align: top; padding-top: .55rem;
+}
+
+.round-label { display: flex; flex-direction: column; gap: .22rem; align-items: flex-start; }
+.round-num-txt { font-size: .88rem; color: #666; font-weight: 700; }
+.sum-badge {
+  font-size: .67rem; padding: .1rem .35rem;
+  border-radius: 4px; font-weight: 700; display: inline-block;
+}
+.sum-ok { background: #e8f5e9; color: #1a8a3a; }
+.sum-err { background: #fce4e4; color: #c0392b; }
+.gwang-add-btn {
+  font-size: .68rem; padding: .1rem .32rem;
+  border: 1px dashed #d4940a; border-radius: 4px;
+  background: none; color: #c07c00; cursor: pointer; transition: background .15s;
+}
+.gwang-add-btn:hover { background: #fff8e1; }
+.gwang-remove-btn {
+  font-size: .65rem; padding: .08rem .28rem;
+  border: 1px solid #e0c080; border-radius: 4px;
+  background: #fff8e1; color: #a06000; cursor: pointer; transition: background .15s;
+}
+.gwang-remove-btn:hover { background: #fce4e4; color: #c0392b; border-color: #e74c3c; }
+.gwang-label { font-size: .78rem; color: #a06000; font-weight: 600; }
+
+/* cell fold states */
+td.cell-vol { background: #fffaec !important; }
+td.cell-inv { background: #fff0f0 !important; }
+
+.cell-body { display: flex; align-items: center; justify-content: center; gap: .28rem; min-width: 140px; }
+
+.fold-btn {
+  height: 26px; min-width: 28px; border-radius: 6px; border: 1px solid transparent;
+  cursor: pointer; font-size: .72rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  flex-shrink: 0; transition: all .15s; padding: 0 5px; white-space: nowrap;
+}
+.fold-none { background: #f0f0f0; color: #bbb; border-color: #e0e0e0; }
+.fold-none:hover { background: #e4e4e4; color: #888; }
+.fold-vol { background: #fff3cd; color: #9a6800; border-color: #f0c040; }
+.fold-inv { background: #fce4e4; color: #c0392b; border-color: #e08080; }
+
+.score-inp {
+  width: 65px; padding: .32rem .4rem; background: #f8f8f8; border: 1px solid #ddd;
+  border-radius: 6px; color: #333; font-size: .9rem;
+  text-align: center; outline: none; transition: border-color .18s, background .18s;
+}
+.score-inp:focus { border-color: #aaa; background: white; }
+
+/* total row */
+tfoot tr { background: #f0ede4; border-top: 2px solid #d0ccc0; }
+tfoot td { padding: .85rem .4rem; font-weight: 700; }
+tfoot td:first-child {
+  padding-left: .8rem; text-align: left; font-size: .75rem; text-transform: uppercase;
+  letter-spacing: .05em; color: #888; font-weight: 400;
+}
+.tot-val { font-size: 1.05rem; font-weight: 800; }
+
+.add-round-btn {
+  margin-top: .75rem; padding: .55rem 1.1rem; background: white;
+  border: 1px dashed #bbb; border-radius: 8px; color: #888;
+  font-size: .85rem; cursor: pointer; transition: all .18s;
+}
+.add-round-btn:hover { background: #f5f5f5; color: #555; border-style: solid; }
+
+/* ── RACE ── */
+.race-card {
+  background: white; border-radius: 14px; border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07); padding: 1.4rem;
+}
+.race-controls {
+  display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; margin-bottom: 1.2rem;
+}
+.race-controls label { font-size: .88rem; color: #666; }
+#raceSlider { flex: 1; min-width: 140px; max-width: 260px; accent-color: #2ecc71; cursor: pointer; }
+.round-badge {
+  background: #e8f5e9; border: 1px solid #81c784;
+  color: #1a8a3a; padding: .2rem .65rem; border-radius: 20px; font-size: .82rem; font-weight: 700;
+}
+.play-btn {
+  padding: .45rem 1.1rem;
+  background: linear-gradient(135deg, #e67e22, #f5a623);
+  border: none; border-radius: 8px; color: white;
+  font-size: .9rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(230,126,34,.3);
+  transition: transform .1s, box-shadow .15s;
+  display: flex; align-items: center; gap: .4rem;
+}
+.play-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(230,126,34,.4); }
+.play-btn:active { transform: none; }
+.play-btn.playing {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  box-shadow: 0 2px 10px rgba(192,57,43,.3);
+}
+
+.race-track-wrap {
+  display: flex; flex-direction: column; gap: 3.6rem;
+  padding: 1rem; padding-top: 68px;
+  background: #eaf7ec;
+  border-radius: 10px; border: 1px solid #c8e6c9;
+}
+
+.race-lane { display: flex; align-items: center; gap: .75rem; }
+.lane-lbl {
+  width: 130px; font-size: 1.15rem;
+  display: flex; align-items: center; gap: .5rem; flex-shrink: 0; overflow: hidden;
+}
+.lane-lbl .dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+.lane-lbl span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #222; font-weight: 700; }
+
+.lane-outer {
+  flex: 1; position: relative; height: 72px;
+  background: linear-gradient(180deg, #43a047 0%, #388e3c 50%, #43a047 100%);
+  border-radius: 10px; overflow: visible;
+  border: 2px solid #2e7d32;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.2);
+}
+/* lane stripes */
+.lane-outer::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 9px;
+  background: repeating-linear-gradient(90deg,
+    transparent 0px, transparent 44px,
+    rgba(255,255,255,.07) 44px, rgba(255,255,255,.07) 45px);
+  pointer-events: none; z-index: 1;
+}
+
+.finish-line {
+  position: absolute; right: 8%; top: -8px; bottom: -8px; width: 10px; z-index: 2;
+  background: repeating-linear-gradient(to bottom,
+    #111 0px, #111 7px, #fff 7px, #fff 14px);
+  border-radius: 2px;
+}
+.finish-flag {
+  position: absolute; right: calc(8% - 2px); top: -30px;
+  font-size: 1.4rem; z-index: 3;
+}
+
+.horse-wrap {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  transition: left .8s cubic-bezier(.25,.46,.45,.94);
+  z-index: 4; pointer-events: none;
+}
+.horse-flag-above {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-40%);
+  display: flex; flex-direction: column; align-items: flex-start;
+  padding-bottom: 0;
+}
+.horse-flag {
+  border-radius: 5px 5px 5px 0;
+  padding: .22rem .5rem;
+  white-space: nowrap; min-width: 52px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.28);
+  line-height: 1.4;
+}
+.flag-name  { display: block; font-size: .78rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.flag-score { display: block; font-size: .68rem; font-weight: 700; color: rgba(255,255,255,.9); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.flag-pole  { width: 4px; height: 22px; background: #222; border-radius: 2px; margin-left: 3px; box-shadow: 1px 0 3px rgba(0,0,0,.4); }
+.horse-emoji {
+  font-size: 3.2rem; line-height: 1;
+  display: block; transform: scaleX(-1);
+  filter: drop-shadow(1px 2px 3px rgba(0,0,0,.3));
+}
+.lane-rank { font-size: 5.2rem; width: 80px; flex-shrink: 0; line-height: 1; height: 72px; display: flex; align-items: center; justify-content: center; }
+
+/* ── GALLOP ANIMATION ── */
+@keyframes gallop {
+  0%   { transform: scaleX(-1) translateY(0px) rotate(0deg); }
+  15%  { transform: scaleX(-1) translateY(-7px) rotate(-5deg); }
+  30%  { transform: scaleX(-1) translateY(-1px) rotate(3deg); }
+  50%  { transform: scaleX(-1) translateY(-9px) rotate(-4deg); }
+  65%  { transform: scaleX(-1) translateY(-2px) rotate(4deg); }
+  80%  { transform: scaleX(-1) translateY(-6px) rotate(-3deg); }
+  100% { transform: scaleX(-1) translateY(0px) rotate(0deg); }
+}
+.horse-emoji.galloping {
+  animation: gallop .42s ease-in-out infinite;
+}
+/* hoofbeat dust effect */
+@keyframes dustpuff {
+  0%   { opacity: .8; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(14px) scale(1.8); }
+}
+.horse-wrap.galloping::after {
+  content: '·';
+  position: absolute; right: 100%; top: 60%;
+  color: rgba(200,160,80,.7);
+  animation: dustpuff .35s ease-out infinite;
+  font-size: 1.2rem; pointer-events: none;
+}
+
+@media (max-width: 580px) {
+  .lane-lbl { width: 70px; font-size: .74rem; }
+  .cell-body { min-width: 115px; }
+  .score-inp { width: 55px; }
+  .horse-emoji { font-size: 2.4rem; }
+  .lane-outer { height: 55px; }
+}
+
+/* ── ARCHIVE ── */
+.save-archive-btn {
+  padding: .45rem 1rem;
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  border: none; border-radius: 8px; color: white;
+  font-size: .88rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(108,92,231,.3);
+  transition: transform .1s, box-shadow .15s;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.save-archive-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(108,92,231,.4); }
+.save-archive-btn:active { transform: none; }
+
+.archive-sec { padding: 0 1.2rem 2.5rem; max-width: 1150px; margin: 0 auto; }
+.archive-sec-hdr {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;
+}
+.clear-archive-btn {
+  padding: .35rem .8rem; border: 1px solid #ddd; border-radius: 8px;
+  background: white; color: #999; font-size: .78rem; cursor: pointer; transition: all .15s;
+}
+.clear-archive-btn:hover { background: #fce4e4; color: #c0392b; border-color: #e8a0a0; }
+
+.archive-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1rem;
+}
+.archive-card {
+  background: white; border-radius: 12px; border: 1px solid #e0dcd4;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07); overflow: hidden;
+}
+.archive-card-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .5rem .8rem; background: #f7f5ef; border-bottom: 1px solid #eeece4;
+}
+.archive-date { font-size: .75rem; color: #888; }
+.archive-del {
+  background: none; border: none; cursor: pointer; color: #ccc;
+  font-size: .8rem; padding: .1rem .35rem; border-radius: 4px; transition: all .15s; line-height: 1;
+}
+.archive-del:hover { background: #fce4e4; color: #c0392b; }
+.archive-players { padding: .55rem .75rem; display: flex; flex-direction: column; gap: .3rem; }
+.archive-player {
+  display: flex; align-items: center; gap: .55rem;
+  padding: .32rem .55rem; border-radius: 7px;
+  border-left: 4px solid transparent;
+}
+.archive-player.r1 { background: #fffbea; border-left-color: #f5c518; }
+.archive-player.r2 { background: #f8f8f8; border-left-color: #b0b0b0; }
+.archive-player.r3 { background: #fef6ef; border-left-color: #cd7f32; }
+.archive-player.r4 { background: #fafafa; border-left-color: #ddd; }
+.archive-medal { font-size: 1.3rem; line-height: 1; flex-shrink: 0; }
+.archive-name { flex: 1; font-size: .9rem; font-weight: 700; color: #333; }
+.archive-score { font-size: 1rem; font-weight: 800; }
+.archive-empty { text-align: center; padding: 2rem; color: #bbb; font-size: .9rem; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  background: #2d3436; color: #fff; padding: .6rem 1.4rem;
+  border-radius: 24px; font-size: .88rem; font-weight: 600;
+  pointer-events: none; opacity: 0; transition: opacity .25s;
+  z-index: 9999; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════ SETUP ════════════ -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <h1>🎴 고스톱</h1>
+    <p class="sub">Go-Stop Score Tracker</p>
+
+    <div class="form-section">
+      <label>Number of Players</label>
+      <div class="count-btns">
+        <button class="count-btn" data-n="2" onclick="setCount(2)">2명</button>
+        <button class="count-btn active" data-n="3" onclick="setCount(3)">3명</button>
+        <button class="count-btn" data-n="4" onclick="setCount(4)">4명</button>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <label>Player Names</label>
+      <div id="pinputs" class="player-inputs"></div>
+    </div>
+
+    <div class="form-section">
+      <label>Number of Rounds</label>
+      <div class="stepper">
+        <button class="step-btn" onclick="adjRounds(-1)">−</button>
+        <span class="step-num" id="roundNum">5</span>
+        <button class="step-btn" onclick="adjRounds(1)">+</button>
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="startGame()">게임 시작 · Start Game</button>
+  </div>
+</div>
+
+<!-- ════════════ GAME ════════════ -->
+<div id="gameScreen" hidden>
+  <div class="game-hdr">
+    <h1>🎴 고스톱 점수판</h1>
+    <button class="ghost-btn" onclick="resetGame()">↩ New Game</button>
+  </div>
+
+  <div class="sec">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+      <div class="sec-title" style="margin-bottom:0">📋 Score Board</div>
+      <button class="save-archive-btn" onclick="saveToArchive()">💾 Save to History</button>
+    </div>
+    <div class="legend">
+      <span>🏳️ 자진 불참 (Voluntary)</span>
+      <span>🚩 강제 불참 (Forced)</span>
+      <span style="background:#fce4e4;border-color:#e74c3c;color:#c0392b">⚠️ Row doesn't sum to 0</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead id="tHead"></thead>
+        <tbody id="tBody"></tbody>
+        <tfoot id="tFoot"></tfoot>
+      </table>
+    </div>
+    <button class="add-round-btn" onclick="addRound()">＋ Add Round</button>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">🏇 Score Race</div>
+    <div class="race-card">
+      <div class="race-controls">
+        <label>After Round:</label>
+        <input type="range" id="raceSlider" min="0" max="1" value="0" oninput="onSlider(this.value)">
+        <span class="round-badge" id="roundBadge">Start</span>
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play Race</button>
+      </div>
+      <div id="raceTrack" class="race-track-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ════════════ ARCHIVE ════════════ -->
+<div class="archive-sec">
+  <div class="archive-sec-hdr">
+    <div class="sec-title" style="margin-bottom:0">📚 Game History</div>
+    <button class="clear-archive-btn" onclick="clearArchive()">Clear All</button>
+  </div>
+  <div id="archiveList" class="archive-grid"></div>
+</div>
+
+<script>
+const COLORS = ['#e74c3c','#2980b9','#27ae60','#8e44ad'];
+const RANKS  = ['🥇','🥈','🥉','🏅'];
+
+const G = { playerCount:3, roundCount:5, players:[], rounds:[] };
+
+// play state
+let playState = { active:false, timer:null, round:1, audioCtx:null };
+
+// ── SETUP ──────────────────────────────────────────────────────
+function setCount(n) {
+  G.playerCount = n;
+  document.querySelectorAll('.count-btn').forEach(b => b.classList.toggle('active', +b.dataset.n === n));
+  drawPInputs();
+}
+
+function drawPInputs() {
+  const wrap = document.getElementById('pinputs');
+  const vals = [...wrap.querySelectorAll('input')].map(i => i.value);
+  wrap.innerHTML = '';
+  for (let i = 0; i < G.playerCount; i++) {
+    const d = document.createElement('div');
+    d.className = 'pinput-row';
+    d.innerHTML = `<div class="color-dot" style="background:${COLORS[i]}"></div>
+      <input type="text" placeholder="Player ${i+1}" value="${esc(vals[i]||'')}" maxlength="16">`;
+    wrap.appendChild(d);
+  }
+}
+
+function adjRounds(d) {
+  G.roundCount = Math.max(1, Math.min(30, G.roundCount + d));
+  document.getElementById('roundNum').textContent = G.roundCount;
+}
+
+function startGame() {
+  const inps = document.querySelectorAll('#pinputs input');
+  G.players = [...inps].map((inp, i) => ({
+    name: inp.value.trim() || `Player ${i+1}`,
+    color: COLORS[i]
+  }));
+  G.rounds = Array.from({length: G.roundCount}, makeRound);
+  document.getElementById('setupScreen').hidden = true;
+  document.getElementById('gameScreen').hidden = false;
+  renderTable();
+  syncSlider();
+  initRaceTrack();
+  updateRacePositions(0);
+}
+
+function makeRound() {
+  return {
+    scores: G.players.map(() => ({ val:'', fold:'none' })),
+    gwang: null   // null | [{val:''}]
+  };
+}
+
+function resetGame() {
+  stopPlay();
+  document.getElementById('gameScreen').hidden = true;
+  document.getElementById('setupScreen').hidden = false;
+}
+
+// ── TABLE ──────────────────────────────────────────────────────
+function renderTable() { drawHead(); drawBody(); drawFoot(); }
+
+function drawHead() {
+  let h = '<tr><th style="text-align:left;padding-left:.8rem">Round</th>';
+  G.players.forEach(p => {
+    h += `<th><div class="th-inner">
+      <div class="th-dot" style="background:${p.color}"></div>
+      ${esc(p.name)}</div></th>`;
+  });
+  document.getElementById('tHead').innerHTML = h + '</tr>';
+}
+
+function drawBody() {
+  const tbody = document.getElementById('tBody');
+  tbody.innerHTML = '';
+
+  G.rounds.forEach((round, ri) => {
+    // ── main row ──
+    const mainSum = roundMainSum(round);
+    const mainSumOk = Math.abs(mainSum) < 0.001;
+    const hasInv = round.scores.some(s => s.fold === 'involuntary');
+
+    const tr = document.createElement('tr');
+    tr.id = `row-${ri}`;
+    if (!mainSumOk) tr.classList.add('row-error');
+
+    // round number cell
+    const rtd = document.createElement('td');
+    rtd.className = 'round-td';
+    const sumBadge = `<span id="sum-badge-${ri}" class="sum-badge ${mainSumOk ? 'sum-ok' : 'sum-err'}">${mainSumOk ? '✓0' : 'Σ='+(mainSum>0?'+':'')+mainSum.toFixed(0)}</span>`;
+    const gwangBtn = hasInv
+      ? (round.gwang === null
+          ? `<button class="gwang-add-btn" onclick="addGwang(${ri})">＋광</button>`
+          : `<button class="gwang-remove-btn" onclick="removeGwang(${ri})">광 ✕</button>`)
+      : '';
+    rtd.innerHTML = `<div class="round-label">
+      <span class="round-num-txt">R${ri+1}</span>
+      ${sumBadge}
+      ${gwangBtn}
+    </div>`;
+    tr.appendChild(rtd);
+
+    // score cells
+    round.scores.forEach((s, pi) => {
+      const td = document.createElement('td');
+      if (s.fold === 'voluntary')   td.className = 'cell-vol';
+      else if (s.fold === 'involuntary') td.className = 'cell-inv';
+
+      const fIcon = s.fold === 'voluntary' ? '🏳️자진'
+                  : s.fold === 'involuntary' ? '🚩강제'
+                  : '○';
+      const fCls  = `fold-btn fold-${s.fold === 'none' ? 'none' : s.fold === 'voluntary' ? 'vol' : 'inv'}`;
+      const fTip  = s.fold === 'none'
+        ? '클릭: 자진 불참 설정'
+        : s.fold === 'voluntary'
+        ? '자진 불참 → 클릭: 강제 불참'
+        : '강제 불참 → 클릭: 해제';
+
+      td.innerHTML = `<div class="cell-body">
+        <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
+        <input class="score-inp" type="number" step="1"
+               value="${esc(s.val)}" placeholder="0"
+               oninput="onScore(${ri},${pi},this.value)">
+      </div>`;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+
+    // ── gwang sub-row ──
+    if (round.gwang !== null) {
+      const gwangSum = roundGwangSum(round);
+      const gwangSumOk = Math.abs(gwangSum) < 0.001;
+
+      const gtr = document.createElement('tr');
+      gtr.id = `gwang-row-${ri}`;
+      gtr.className = 'gwang-row' + (gwangSumOk ? '' : ' row-error');
+
+      const gtd = document.createElement('td');
+      gtd.className = 'round-td';
+      const gBadge = `<span id="gwang-badge-${ri}" class="sum-badge ${gwangSumOk ? 'sum-ok' : 'sum-err'}">${gwangSumOk ? '✓0' : 'Σ='+(gwangSum>0?'+':'')+gwangSum.toFixed(0)}</span>`;
+      gtd.innerHTML = `<div class="round-label">
+        <span class="gwang-label">↳ 광</span>
+        ${gBadge}
+      </div>`;
+      gtr.appendChild(gtd);
+
+      round.gwang.forEach((g, pi) => {
+        const gtd2 = document.createElement('td');
+        gtd2.innerHTML = `<div class="cell-body">
+          <div style="min-width:28px"></div>
+          <input class="score-inp" type="number" step="1"
+                 value="${esc(g.val)}" placeholder="0"
+                 oninput="onGwangScore(${ri},${pi},this.value)">
+        </div>`;
+        gtr.appendChild(gtd2);
+      });
+      tbody.appendChild(gtr);
+    }
+  });
+}
+
+function drawFoot() {
+  const tots = calcTotals();
+  let h = '<tr><td>합계 / Total</td>';
+  tots.forEach((t, i) => {
+    const sign = t > 0 ? '+' : '';
+    h += `<td><span class="tot-val" style="color:${G.players[i].color}">${sign}${t}</span></td>`;
+  });
+  document.getElementById('tFoot').innerHTML = h + '</tr>';
+}
+
+function calcTotals() {
+  return G.players.map((_, pi) =>
+    G.rounds.reduce((sum, r) => {
+      const ms = parseFloat(r.scores[pi].val) || 0;
+      const gs = r.gwang ? (parseFloat(r.gwang[pi].val) || 0) : 0;
+      return sum + ms + gs;
+    }, 0)
+  );
+}
+
+function roundMainSum(round) {
+  return round.scores.reduce((s, sc) => s + (parseFloat(sc.val) || 0), 0);
+}
+function roundGwangSum(round) {
+  if (!round.gwang) return 0;
+  return round.gwang.reduce((s, g) => s + (parseFloat(g.val) || 0), 0);
+}
+
+function refreshRowState(ri) {
+  const sum = roundMainSum(G.rounds[ri]);
+  const ok  = Math.abs(sum) < 0.001;
+  const badge = document.getElementById(`sum-badge-${ri}`);
+  if (badge) {
+    badge.className = `sum-badge ${ok ? 'sum-ok' : 'sum-err'}`;
+    badge.textContent = ok ? '✓0' : `Σ=${sum > 0 ? '+' : ''}${sum.toFixed(0)}`;
+  }
+  const tr = document.getElementById(`row-${ri}`);
+  if (tr) tr.classList.toggle('row-error', !ok);
+}
+
+function refreshGwangRowState(ri) {
+  const sum = roundGwangSum(G.rounds[ri]);
+  const ok  = Math.abs(sum) < 0.001;
+  const badge = document.getElementById(`gwang-badge-${ri}`);
+  if (badge) {
+    badge.className = `sum-badge ${ok ? 'sum-ok' : 'sum-err'}`;
+    badge.textContent = ok ? '✓0' : `Σ=${sum > 0 ? '+' : ''}${sum.toFixed(0)}`;
+  }
+  const tr = document.getElementById(`gwang-row-${ri}`);
+  if (tr) tr.classList.toggle('row-error', !ok);
+}
+
+// ── HANDLERS ──────────────────────────────────────────────────
+function onScore(ri, pi, v) {
+  G.rounds[ri].scores[pi].val = v;
+  refreshRowState(ri);
+  drawFoot();
+  updateRaceNow();
+}
+
+function cycleFold(ri, pi) {
+  const order = ['none','voluntary','involuntary'];
+  const s = G.rounds[ri].scores[pi];
+  s.fold = order[(order.indexOf(s.fold) + 1) % 3];
+  drawBody(); drawFoot();
+}
+
+function addGwang(ri) {
+  G.rounds[ri].gwang = G.players.map(() => ({ val:'' }));
+  drawBody(); drawFoot();
+}
+function removeGwang(ri) {
+  G.rounds[ri].gwang = null;
+  drawBody(); drawFoot();
+}
+function onGwangScore(ri, pi, v) {
+  G.rounds[ri].gwang[pi].val = v;
+  refreshGwangRowState(ri);
+  drawFoot();
+  updateRaceNow();
+}
+
+function addRound() {
+  G.rounds.push(makeRound());
+  drawBody(); drawFoot();
+  syncSlider();
+}
+
+// ── RACE ──────────────────────────────────────────────────────
+function getCum(upTo) {
+  return G.players.map((_, pi) =>
+    G.rounds.slice(0, upTo).reduce((sum, r) => {
+      const ms = parseFloat(r.scores[pi].val) || 0;
+      const gs = r.gwang ? (parseFloat(r.gwang[pi].val) || 0) : 0;
+      return sum + ms + gs;
+    }, 0)
+  );
+}
+
+// Compute global max cumulative score across ALL rounds (for scaling finish line)
+function getGlobalExtremes() {
+  const allScores = G.players.map((_, pi) => {
+    let cum = 0;
+    let mx = -Infinity, mn = Infinity;
+    G.rounds.forEach(r => {
+      cum += (parseFloat(r.scores[pi].val) || 0) + (r.gwang ? (parseFloat(r.gwang[pi].val)||0) : 0);
+      mx = Math.max(mx, cum);
+      mn = Math.min(mn, cum);
+    });
+    return { max: mx === -Infinity ? 0 : mx, min: mn === Infinity ? 0 : mn };
+  });
+  return {
+    globalMax: Math.max(...allScores.map(s => s.max), 0),
+    globalMin: Math.min(...allScores.map(s => s.min), 0)
+  };
+}
+
+// Returns an array of track positions (%) for all players at `upToRound`.
+// Leader always sits at the round-proportional position (touches finish line on
+// the final round). Everyone else scales linearly between start and leader.
+function getHorsePositions(scores, upToRound) {
+  const START = 2, FINISH = 89;
+  const totalRounds = G.rounds.length || 1;
+  // where the leader sits this round
+  const leaderPct = START + (upToRound / totalRounds) * (FINISH - START);
+
+  const maxS = Math.max(...scores);
+  const minS = Math.min(...scores);
+  const range = maxS - minS;
+
+  return scores.map(s => {
+    // when everyone is tied, put them all at the leader position
+    const frac = range <= 0 ? 1 : (s - minS) / range;
+    return START + frac * (leaderPct - START);
+  });
+}
+
+function initRaceTrack() {
+  const track = document.getElementById('raceTrack');
+  track.innerHTML = '';
+  G.players.forEach((p, pi) => {
+    const lane = document.createElement('div');
+    lane.className = 'race-lane';
+    lane.innerHTML = `
+      <div class="lane-lbl">
+        <div class="dot" style="background:${p.color}"></div>
+        <span>${esc(p.name)}</span>
+      </div>
+      <div class="lane-outer" id="lane-outer-${pi}">
+        <div class="finish-flag">🏁</div>
+        <div class="finish-line"></div>
+        <div class="horse-wrap" id="horse-${pi}" style="left:2%">
+          <div class="horse-flag-above">
+            <div class="horse-flag" style="background:${p.color}">
+              <span class="flag-name">${esc(p.name)}</span>
+              <span class="flag-score" id="horse-score-${pi}">0</span>
+            </div>
+            <div class="flag-pole"></div>
+          </div>
+          <span class="horse-emoji" id="horse-emoji-${pi}">🐎</span>
+        </div>
+      </div>
+      <div class="lane-rank" id="rank-${pi}">🏅</div>`;
+    track.appendChild(lane);
+  });
+}
+
+function updateRacePositions(upTo) {
+  if (!document.getElementById('horse-0')) return;
+  upTo = Math.max(0, Math.min(upTo, G.rounds.length));
+  const badge = document.getElementById('roundBadge');
+  if (badge) badge.textContent = upTo === 0 ? 'Start' : `Round ${upTo}`;
+  document.getElementById('raceSlider').value = upTo;
+
+  const scores = getCum(upTo);
+  const positions = getHorsePositions(scores, upTo);
+  const ranked = [...scores.map((s,i)=>({s,i}))].sort((a,b)=>b.s-a.s);
+
+  G.players.forEach((p, pi) => {
+    const rank = ranked.findIndex(r=>r.i===pi) + 1;
+    const sign = scores[pi] >= 0 ? '+' : '';
+
+    const hw = document.getElementById(`horse-${pi}`);
+    const hs = document.getElementById(`horse-score-${pi}`);
+    const rk = document.getElementById(`rank-${pi}`);
+    if (hw) hw.style.left = `${positions[pi]}%`;
+    if (hs) hs.textContent = `${sign}${scores[pi]}`;   // white from CSS, no override
+    if (rk) rk.textContent = RANKS[rank-1] || '🏅';
+  });
+}
+
+function syncSlider() {
+  const sl = document.getElementById('raceSlider');
+  const prev = parseInt(sl.value);
+  sl.min = 0;
+  sl.max = G.rounds.length;
+  sl.value = Math.min(prev, G.rounds.length);
+  updateRacePositions(parseInt(sl.value));
+}
+
+function onSlider(v) {
+  if (playState.active) stopPlay();
+  updateRacePositions(parseInt(v));
+}
+
+function updateRaceNow() {
+  const sl = document.getElementById('raceSlider');
+  sl.max = G.rounds.length;
+  updateRacePositions(parseInt(sl.value));
+}
+
+// ── PLAY BUTTON ────────────────────────────────────────────────
+function togglePlay() {
+  if (playState.active) stopPlay();
+  else startPlay();
+}
+
+function startPlay() {
+  playState.active = true;
+  playState.round  = 0;
+
+  const btn = document.getElementById('playBtn');
+  btn.textContent = '⏹ Stop';
+  btn.classList.add('playing');
+
+  // gallop all horses
+  document.querySelectorAll('.horse-emoji').forEach(h => h.classList.add('galloping'));
+  document.querySelectorAll('.horse-wrap').forEach(h => h.classList.add('galloping'));
+
+  // music
+  try { playRacingMusic(); } catch(e) {}
+
+  function step() {
+    updateRacePositions(playState.round);
+    const max = G.rounds.length;
+    if (playState.round < max) {
+      playState.round++;
+      playState.timer = setTimeout(step, 1100);
+    } else {
+      playState.timer = setTimeout(stopPlay, 1200);
+    }
+  }
+  step();
+}
+
+function stopPlay() {
+  playState.active = false;
+  if (playState.timer) { clearTimeout(playState.timer); playState.timer = null; }
+
+  const btn = document.getElementById('playBtn');
+  if (btn) { btn.textContent = '▶ Play Race'; btn.classList.remove('playing'); }
+
+  document.querySelectorAll('.horse-emoji').forEach(h => h.classList.remove('galloping'));
+  document.querySelectorAll('.horse-wrap').forEach(h => h.classList.remove('galloping'));
+
+  if (playState.audioCtx) {
+    try { playState.audioCtx.close(); } catch(e){}
+    playState.audioCtx = null;
+  }
+}
+
+// ── MUSIC (Web Audio API – racing fanfare loop) ────────────────
+function playRacingMusic() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+
+  const ctx = new AudioCtx();
+  playState.audioCtx = ctx;
+
+  const master = ctx.createGain();
+  master.gain.value = 0.18;
+  master.connect(ctx.destination);
+
+  // "Call to the Post" melody
+  const n = (hz, start, dur, vol=1) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = hz;
+    g.gain.setValueAtTime(0.001, ctx.currentTime + start);
+    g.gain.exponentialRampToValueAtTime(vol, ctx.currentTime + start + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur - 0.02);
+    o.connect(g); g.connect(master);
+    o.start(ctx.currentTime + start);
+    o.stop(ctx.currentTime + start + dur + 0.05);
+  };
+
+  // frequencies
+  const G4=392, C5=523.25, D5=587.33, E5=659.25, G5=783.99, A5=880;
+
+  // Simple Call to the Post fanfare
+  const song = [
+    [G4,.00,.12],[G4,.13,.12],[C5,.26,.12],[E5,.39,.12],[G5,.52,.28],
+    [G5,.82,.12],[E5,.95,.12],[G5,1.08,.28],
+    [C5,1.38,.12],[E5,1.51,.12],[G5,1.64,.44],
+    [E5,2.10,.12],[G5,2.23,.12],[C5,2.36,.12],[E5,2.49,.55],
+    [G4,3.06,.12],[C5,3.19,.12],[E5,3.32,.22],[G5,3.55,.22],[E5,3.78,.22],[C5,4.01,.55],
+  ];
+
+  // loop the fanfare to cover the whole race
+  const totalRounds = G.rounds.length;
+  const totalDuration = totalRounds * 1.1 + 1;
+  const loopLen = 4.6;
+  for (let offset = 0; offset < totalDuration; offset += loopLen) {
+    song.forEach(([hz, s, d]) => n(hz, offset + s, d, .6));
+  }
+}
+
+// ── ARCHIVE ───────────────────────────────────────────────────
+function saveToArchive() {
+  const tots = calcTotals();
+  const ranked = G.players
+    .map((p, i) => ({ name: p.name, color: p.color, total: tots[i] }))
+    .sort((a, b) => b.total - a.total);
+
+  const entry = {
+    id: Date.now(),
+    date: new Date().toLocaleString('ko-KR', {
+      year:'numeric', month:'short', day:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    }),
+    players: ranked
+  };
+
+  const archive = JSON.parse(localStorage.getItem('gostop_archive') || '[]');
+  archive.unshift(entry);
+  localStorage.setItem('gostop_archive', JSON.stringify(archive));
+  renderArchive();
+  showToast('💾 Saved to history!');
+}
+
+function renderArchive() {
+  const archive = JSON.parse(localStorage.getItem('gostop_archive') || '[]');
+  const list = document.getElementById('archiveList');
+  if (!list) return;
+
+  if (archive.length === 0) {
+    list.innerHTML = '<div class="archive-empty">No saved games yet. Hit 💾 Save to History after a game!</div>';
+    return;
+  }
+
+  const MEDALS = ['🥇','🥈','🥉','🏅'];
+  const RCLS   = ['r1','r2','r3','r4'];
+  list.innerHTML = '';
+
+  archive.forEach(entry => {
+    const card = document.createElement('div');
+    card.className = 'archive-card';
+    const rows = entry.players.map((p, rank) => `
+      <div class="archive-player ${RCLS[rank] || 'r4'}" style="border-left-color:${p.color}">
+        <span class="archive-medal">${MEDALS[rank] || '🏅'}</span>
+        <span class="archive-name">${esc(p.name)}</span>
+        <span class="archive-score" style="color:${p.color}">${p.total >= 0 ? '+' : ''}${p.total}</span>
+      </div>`).join('');
+    card.innerHTML = `
+      <div class="archive-card-hdr">
+        <span class="archive-date">🕐 ${esc(entry.date)}</span>
+        <button class="archive-del" onclick="deleteArchive(${entry.id})" title="Delete">✕</button>
+      </div>
+      <div class="archive-players">${rows}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function deleteArchive(id) {
+  const archive = JSON.parse(localStorage.getItem('gostop_archive') || '[]');
+  localStorage.setItem('gostop_archive', JSON.stringify(archive.filter(e => e.id !== id)));
+  renderArchive();
+}
+
+function clearArchive() {
+  if (!confirm('Clear all saved games from history?')) return;
+  localStorage.removeItem('gostop_archive');
+  renderArchive();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+drawPInputs();
+renderArchive();
+</script>
+</body>
+</html>
