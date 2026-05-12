@@ -115,7 +115,7 @@ td.round-td {
   width: 100px; vertical-align: top; padding-top: .55rem;
 }
 
-.round-label { display: flex; flex-direction: column; gap: .22rem; align-items: flex-start; }
+.round-label { display: flex; flex-direction: row; flex-wrap: wrap; gap: .25rem; align-items: center; }
 .round-num-txt { font-size: .88rem; color: #666; font-weight: 700; }
 .sum-badge {
   font-size: .67rem; padding: .1rem .35rem;
@@ -141,7 +141,7 @@ td.round-td {
 td.cell-vol { background: #fffaec !important; }
 td.cell-inv { background: #fff0f0 !important; }
 
-.cell-body { display: flex; align-items: center; justify-content: center; gap: .28rem; min-width: 140px; }
+.cell-body { display: flex; align-items: center; justify-content: center; gap: .28rem; min-width: 168px; }
 
 .fold-btn {
   height: 26px; min-width: 28px; border-radius: 6px; border: 1px solid transparent;
@@ -153,6 +153,20 @@ td.cell-inv { background: #fff0f0 !important; }
 .fold-none:hover { background: #e4e4e4; color: #888; }
 .fold-vol { background: #fff3cd; color: #9a6800; border-color: #f0c040; }
 .fold-inv { background: #fce4e4; color: #c0392b; border-color: #e08080; }
+
+.wl-btn {
+  height: 26px; min-width: 28px; border-radius: 6px; border: 1px solid transparent;
+  cursor: pointer; font-size: .75rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s; padding: 0 6px; white-space: nowrap;
+}
+.wl-none        { background: #f0f0f0; color: #bbb; border-color: #e0e0e0; }
+.wl-none:hover  { background: #e4e4e4; color: #555; }
+.wl-winner      { background: #e8f5e9; color: #1a8a3a; border-color: #81c784; }
+.wl-loser       { background: #fce4e4; color: #c0392b; border-color: #e08080; }
+
+.neg-sign { font-size: .9rem; font-weight: 800; color: #c0392b; flex-shrink: 0; }
+.score-inp-loser { color: #c0392b; border-color: #e8a0a0; background: #fff5f5; }
 
 .score-inp {
   width: 65px; padding: .32rem .4rem; background: #f8f8f8; border: 1px solid #ddd;
@@ -168,7 +182,10 @@ tfoot td:first-child {
   padding-left: .8rem; text-align: left; font-size: .75rem; text-transform: uppercase;
   letter-spacing: .05em; color: #888; font-weight: 400;
 }
-.tot-val { font-size: 1.05rem; font-weight: 800; }
+.tot-val  { font-size: 1.05rem; font-weight: 800; }
+.tot-cell { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+.tot-name { font-size: .7rem; font-weight: 600; opacity: .75; }
+.round-main-tr td { border-top: 3px solid #c0b070; }
 
 .add-round-btn {
   margin-top: .75rem; padding: .55rem 1.1rem; background: white;
@@ -319,6 +336,7 @@ tfoot td:first-child {
 @media (max-width: 768px) {
   .score-inp { font-size: 16px; }
   .fold-btn  { height: 36px; min-width: 64px; font-size: .7rem; touch-action: manipulation; }
+  .wl-btn    { height: 36px; min-width: 36px; touch-action: manipulation; }
   .out-btn, .step-btn, .count-btn, .ghost-btn, .add-round-btn,
   .save-archive-btn, .play-btn, .gwang-add-btn, .gwang-remove-btn { touch-action: manipulation; }
   .archive-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
@@ -356,7 +374,7 @@ tfoot td:first-child {
   .finish-line { top: -4px; bottom: -4px; }
   .finish-flag { top: -20px; font-size: 1rem; }
   .score-inp  { width: 58px; }
-  .cell-body  { min-width: 108px; gap: .2rem; }
+  .cell-body  { min-width: 130px; gap: .2rem; }
   .race-controls { flex-direction: column; align-items: flex-start; gap: .5rem; }
   #raceSlider { max-width: 100%; width: 100%; }
   .play-btn   { width: 100%; justify-content: center; }
@@ -367,9 +385,10 @@ tfoot td:first-child {
 
 @media (max-width: 360px) {
   .lane-lbl { width: 58px; font-size: .78rem; }
-  .cell-body { min-width: 96px; }
+  .cell-body { min-width: 110px; }
   .score-inp { width: 52px; }
   .fold-btn  { min-width: 52px; font-size: .65rem; }
+  .wl-btn    { min-width: 28px; font-size: .65rem; }
 }
 
 /* ── ARCHIVE ── */
@@ -579,8 +598,8 @@ function startGame() {
 
 function makeRound() {
   return {
-    scores: G.players.map(() => ({ val:'', fold:'none' })),
-    gwang: null   // null | [{val:''}]
+    scores: G.players.map(() => ({ val:'', fold:'none', role:'none' })),
+    gwang: null
   };
 }
 
@@ -615,6 +634,7 @@ function drawBody() {
 
     const tr = document.createElement('tr');
     tr.id = `row-${ri}`;
+    if (ri > 0) tr.classList.add('round-main-tr');
     if (!mainSumOk) tr.classList.add('row-error');
 
     // round number cell
@@ -649,11 +669,16 @@ function drawBody() {
         ? '자진 불참 → 클릭: 강제 불참'
         : '강제 불참 → 클릭: 해제';
 
+      const roleCls   = s.role === 'winner' ? 'wl-winner' : s.role === 'loser' ? 'wl-loser' : 'wl-none';
+      const roleLabel = s.role === 'winner' ? '승' : s.role === 'loser' ? '패' : '–';
+      const negSign   = s.role === 'loser' ? '<span class="neg-sign">−</span>' : '';
+      const inpCls    = s.role === 'loser' ? 'score-inp score-inp-loser' : 'score-inp';
       td.innerHTML = `<div class="cell-body">
-        <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
-        <input class="score-inp" type="number" step="1"
+        <button class="wl-btn ${roleCls}" onclick="cycleRole(${ri},${pi})">${roleLabel}</button>
+        ${negSign}<input class="${inpCls}" type="number" step="1"
                value="${esc(s.val)}" placeholder="0"
                oninput="onScore(${ri},${pi},this.value)">
+        <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
       </div>`;
       tr.appendChild(td);
     });
@@ -679,11 +704,16 @@ function drawBody() {
 
       round.gwang.forEach((g, pi) => {
         const gtd2 = document.createElement('td');
+        const gRoleCls   = g.role === 'winner' ? 'wl-winner' : g.role === 'loser' ? 'wl-loser' : 'wl-none';
+        const gRoleLabel = g.role === 'winner' ? '승' : g.role === 'loser' ? '패' : '–';
+        const gNegSign   = g.role === 'loser' ? '<span class="neg-sign">−</span>' : '';
+        const gInpCls    = g.role === 'loser' ? 'score-inp score-inp-loser' : 'score-inp';
         gtd2.innerHTML = `<div class="cell-body">
-          <div style="min-width:28px"></div>
-          <input class="score-inp" type="number" step="1"
+          <button class="wl-btn ${gRoleCls}" onclick="cycleGwangRole(${ri},${pi})">${gRoleLabel}</button>
+          ${gNegSign}<input class="${gInpCls}" type="number" step="1"
                  value="${esc(g.val)}" placeholder="0"
                  oninput="onGwangScore(${ri},${pi},this.value)">
+          <div style="min-width:28px"></div>
         </div>`;
         gtr.appendChild(gtd2);
       });
@@ -697,7 +727,10 @@ function drawFoot() {
   let h = '<tr><td>합계 / Total</td>';
   tots.forEach((t, i) => {
     const sign = t > 0 ? '+' : '';
-    h += `<td><span class="tot-val" style="color:${G.players[i].color}">${sign}${t}</span></td>`;
+    h += `<td><div class="tot-cell">
+      <span class="tot-name" style="color:${G.players[i].color}">${esc(G.players[i].name)}</span>
+      <span class="tot-val" style="color:${G.players[i].color}">${sign}${t}</span>
+    </div></td>`;
   });
   document.getElementById('tFoot').innerHTML = h + '</tr>';
 }
@@ -705,19 +738,25 @@ function drawFoot() {
 function calcTotals() {
   return G.players.map((_, pi) =>
     G.rounds.reduce((sum, r) => {
-      const ms = parseFloat(r.scores[pi].val) || 0;
-      const gs = r.gwang ? (parseFloat(r.gwang[pi].val) || 0) : 0;
+      const ms = effectiveVal(r.scores[pi]);
+      const gs = r.gwang ? effectiveVal(r.gwang[pi]) : 0;
       return sum + ms + gs;
     }, 0)
   );
 }
 
+function effectiveVal(score) {
+  const v = parseFloat(score.val) || 0;
+  if (score.role === 'winner') return Math.abs(v);
+  if (score.role === 'loser')  return -Math.abs(v);
+  return v;
+}
 function roundMainSum(round) {
-  return round.scores.reduce((s, sc) => s + (parseFloat(sc.val) || 0), 0);
+  return round.scores.reduce((s, sc) => s + effectiveVal(sc), 0);
 }
 function roundGwangSum(round) {
   if (!round.gwang) return 0;
-  return round.gwang.reduce((s, g) => s + (parseFloat(g.val) || 0), 0);
+  return round.gwang.reduce((s, g) => s + effectiveVal(g), 0);
 }
 
 function refreshRowState(ri) {
@@ -759,8 +798,22 @@ function cycleFold(ri, pi) {
   drawBody(); drawFoot();
 }
 
+function cycleRole(ri, pi) {
+  const order = ['none','winner','loser'];
+  const s = G.rounds[ri].scores[pi];
+  s.role = order[(order.indexOf(s.role) + 1) % 3];
+  drawBody(); drawFoot(); updateRaceNow();
+}
+
+function cycleGwangRole(ri, pi) {
+  const order = ['none','winner','loser'];
+  const g = G.rounds[ri].gwang[pi];
+  g.role = order[(order.indexOf(g.role) + 1) % 3];
+  drawBody(); drawFoot(); updateRaceNow();
+}
+
 function addGwang(ri) {
-  G.rounds[ri].gwang = G.players.map(() => ({ val:'' }));
+  G.rounds[ri].gwang = G.players.map(() => ({ val:'', role:'none' }));
   drawBody(); drawFoot();
 }
 function removeGwang(ri) {
@@ -784,8 +837,8 @@ function addRound() {
 function getCum(upTo) {
   return G.players.map((_, pi) =>
     G.rounds.slice(0, upTo).reduce((sum, r) => {
-      const ms = parseFloat(r.scores[pi].val) || 0;
-      const gs = r.gwang ? (parseFloat(r.gwang[pi].val) || 0) : 0;
+      const ms = effectiveVal(r.scores[pi]);
+      const gs = r.gwang ? effectiveVal(r.gwang[pi]) : 0;
       return sum + ms + gs;
     }, 0)
   );
