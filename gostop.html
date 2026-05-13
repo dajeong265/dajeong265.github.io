@@ -168,6 +168,8 @@ td.cell-inv { background: #fff0f0 !important; }
 .neg-sign { font-size: .9rem; font-weight: 800; color: #c0392b; flex-shrink: 0; }
 .score-inp-loser  { color: #c0392b; border-color: #e8a0a0; background: #fff5f5; }
 .score-inp-winner { color: #1a8a3a; border-color: #81c784; background: #e8f5e9; cursor: default; }
+.score-inp:disabled { opacity: .4; cursor: not-allowed; background: #ebebeb; }
+.wl-btn:disabled   { opacity: .3; cursor: not-allowed; }
 
 .score-inp {
   width: 65px; padding: .32rem .4rem; background: #f8f8f8; border: 1px solid #ddd;
@@ -489,7 +491,7 @@ tfoot td:first-child {
       <label>Number of Rounds</label>
       <div class="stepper">
         <button class="step-btn" onclick="adjRounds(-1)">−</button>
-        <span class="step-num" id="roundNum">5</span>
+        <span class="step-num" id="roundNum">12</span>
         <button class="step-btn" onclick="adjRounds(1)">+</button>
       </div>
     </div>
@@ -525,7 +527,10 @@ tfoot td:first-child {
         <tfoot id="tFoot"></tfoot>
       </table>
     </div>
-    <button class="add-round-btn" onclick="addRound()">＋ Add Round</button>
+    <div style="display:flex;gap:.5rem;margin-top:.75rem">
+      <button class="add-round-btn" style="margin-top:0" onclick="addRound()">＋ Add Round</button>
+      <button class="add-round-btn" style="margin-top:0" onclick="removeRound()">－ Remove Round</button>
+    </div>
   </div>
 
   <div class="sec">
@@ -563,7 +568,7 @@ function rankHtml(rank) {
   return `<span class="medal-4"><span>${rank}</span></span>`;
 }
 
-const G = { playerCount:3, roundCount:5, players:[], rounds:[] };
+const G = { playerCount:3, roundCount:12, players:[], rounds:[] };
 
 // play state
 let playState = { active:false, timer:null, round:1, audioCtx:null };
@@ -681,15 +686,17 @@ function drawBody() {
         ? '자진 불참 → 클릭: 강제 불참'
         : '강제 불참 → 클릭: 해제';
 
+      const isFolded  = s.fold !== 'none';
       const roleCls   = s.role === 'winner' ? 'wl-winner' : s.role === 'loser' ? 'wl-loser' : 'wl-none';
       const roleLabel = s.role === 'winner' ? '승' : s.role === 'loser' ? '패' : '–';
       const negSign   = s.role === 'loser' ? '<span class="neg-sign">−</span>' : '';
       const inpCls    = s.role === 'loser'  ? 'score-inp score-inp-loser'  :
                         s.role === 'winner' ? 'score-inp score-inp-winner' : 'score-inp';
       const rdOnly    = s.role === 'winner' ? 'readonly' : '';
+      const dis       = isFolded ? 'disabled' : '';
       td.innerHTML = `<div class="cell-body">
-        <button class="wl-btn ${roleCls}" onclick="cycleRole(${ri},${pi})">${roleLabel}</button>
-        ${negSign}<input id="score-inp-${ri}-${pi}" class="${inpCls}" type="number" step="1" ${rdOnly}
+        <button class="wl-btn ${roleCls}" onclick="cycleRole(${ri},${pi})" ${dis}>${roleLabel}</button>
+        ${negSign}<input id="score-inp-${ri}-${pi}" class="${inpCls}" type="number" step="1" ${rdOnly} ${dis}
                value="${esc(s.val)}" placeholder="0"
                oninput="onScore(${ri},${pi},this.value)">
         <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
@@ -811,6 +818,11 @@ function cycleFold(ri, pi) {
   const order = ['none','voluntary','involuntary'];
   const s = G.rounds[ri].scores[pi];
   s.fold = order[(order.indexOf(s.fold) + 1) % 3];
+  if (s.fold !== 'none') {
+    s.val = '';
+    s.role = 'none';
+    autoFillWinner(ri);
+  }
   drawBody(); drawFoot();
 }
 
@@ -907,6 +919,13 @@ function onGwangScore(ri, pi, v) {
 
 function addRound() {
   G.rounds.push(makeRound());
+  drawBody(); drawFoot();
+  syncSlider();
+}
+
+function removeRound() {
+  if (G.rounds.length <= 1) { showToast('Need at least 1 round'); return; }
+  G.rounds.pop();
   drawBody(); drawFoot();
   syncSlider();
 }
