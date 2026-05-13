@@ -106,7 +106,7 @@ tbody tr.gwang-row td { background: #fffef5 !important; }
 tbody tr.gwang-row.row-error td { background: #fff0f0 !important; }
 
 td {
-  padding: .38rem .3rem;
+  padding: .58rem .3rem;
   border-bottom: 1px solid #ede9de;
   text-align: center; vertical-align: middle;
 }
@@ -166,7 +166,8 @@ td.cell-inv { background: #fff0f0 !important; }
 .wl-loser       { background: #fce4e4; color: #c0392b; border-color: #e08080; }
 
 .neg-sign { font-size: .9rem; font-weight: 800; color: #c0392b; flex-shrink: 0; }
-.score-inp-loser { color: #c0392b; border-color: #e8a0a0; background: #fff5f5; }
+.score-inp-loser  { color: #c0392b; border-color: #e8a0a0; background: #fff5f5; }
+.score-inp-winner { color: #1a8a3a; border-color: #81c784; background: #e8f5e9; cursor: default; }
 
 .score-inp {
   width: 65px; padding: .32rem .4rem; background: #f8f8f8; border: 1px solid #ddd;
@@ -223,6 +224,12 @@ tfoot td:first-child {
   background: linear-gradient(135deg, #c0392b, #e74c3c);
   box-shadow: 0 2px 10px rgba(192,57,43,.3);
 }
+.step-race-btn {
+  padding: .38rem .72rem; background: white; border: 1px solid #ccc;
+  border-radius: 8px; color: #555; cursor: pointer;
+  font-size: .9rem; font-weight: 700; transition: background .15s;
+}
+.step-race-btn:hover { background: #f0f0f0; color: #222; }
 
 .race-track-wrap {
   display: flex; flex-direction: column; gap: 3.6rem;
@@ -499,9 +506,12 @@ tfoot td:first-child {
   </div>
 
   <div class="sec">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.85rem">
       <div class="sec-title" style="margin-bottom:0">📋 Score Board</div>
-      <button class="save-archive-btn" onclick="saveToArchive()">💾 Save to History</button>
+      <div style="display:flex;gap:.5rem;flex-shrink:0">
+        <button class="ghost-btn" onclick="addPlayer()">＋ Add Player</button>
+        <button class="save-archive-btn" onclick="saveToArchive()">💾 Save to History</button>
+      </div>
     </div>
     <div class="legend">
       <span>🏳️ 자진 불참 (Voluntary)</span>
@@ -523,7 +533,9 @@ tfoot td:first-child {
     <div class="race-card">
       <div class="race-controls">
         <label>After Round:</label>
+        <button class="step-race-btn" onclick="stepRace(-1)" title="Previous round">◀</button>
         <input type="range" id="raceSlider" min="0" max="1" value="0" oninput="onSlider(this.value)">
+        <button class="step-race-btn" onclick="stepRace(1)" title="Next round">▶</button>
         <span class="round-badge" id="roundBadge">Start</span>
         <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play Race</button>
       </div>
@@ -544,7 +556,7 @@ tfoot td:first-child {
 </div>
 
 <script>
-const COLORS = ['#e74c3c','#2980b9','#27ae60','#8e44ad'];
+const COLORS = ['#e74c3c','#2980b9','#27ae60','#8e44ad','#e67e22','#16a085'];
 const RANKS  = ['🥇','🥈','🥉'];
 function rankHtml(rank) {
   if (rank <= 3) return RANKS[rank-1];
@@ -672,10 +684,12 @@ function drawBody() {
       const roleCls   = s.role === 'winner' ? 'wl-winner' : s.role === 'loser' ? 'wl-loser' : 'wl-none';
       const roleLabel = s.role === 'winner' ? '승' : s.role === 'loser' ? '패' : '–';
       const negSign   = s.role === 'loser' ? '<span class="neg-sign">−</span>' : '';
-      const inpCls    = s.role === 'loser' ? 'score-inp score-inp-loser' : 'score-inp';
+      const inpCls    = s.role === 'loser'  ? 'score-inp score-inp-loser'  :
+                        s.role === 'winner' ? 'score-inp score-inp-winner' : 'score-inp';
+      const rdOnly    = s.role === 'winner' ? 'readonly' : '';
       td.innerHTML = `<div class="cell-body">
         <button class="wl-btn ${roleCls}" onclick="cycleRole(${ri},${pi})">${roleLabel}</button>
-        ${negSign}<input class="${inpCls}" type="number" step="1"
+        ${negSign}<input id="score-inp-${ri}-${pi}" class="${inpCls}" type="number" step="1" ${rdOnly}
                value="${esc(s.val)}" placeholder="0"
                oninput="onScore(${ri},${pi},this.value)">
         <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
@@ -786,9 +800,11 @@ function refreshGwangRowState(ri) {
 // ── HANDLERS ──────────────────────────────────────────────────
 function onScore(ri, pi, v) {
   G.rounds[ri].scores[pi].val = v;
+  autoFillWinner(ri);
   refreshRowState(ri);
   drawFoot();
   updateRaceNow();
+  maybeAutoAdvance(ri);
 }
 
 function cycleFold(ri, pi) {
@@ -802,7 +818,12 @@ function cycleRole(ri, pi) {
   const order = ['none','winner','loser'];
   const s = G.rounds[ri].scores[pi];
   s.role = order[(order.indexOf(s.role) + 1) % 3];
+  if (s.role === 'winner') {
+    G.rounds[ri].scores.forEach((sc, i) => { if (i !== pi) sc.role = 'loser'; });
+  }
+  autoFillWinner(ri);
   drawBody(); drawFoot(); updateRaceNow();
+  maybeAutoAdvance(ri);
 }
 
 function cycleGwangRole(ri, pi) {
@@ -810,6 +831,63 @@ function cycleGwangRole(ri, pi) {
   const g = G.rounds[ri].gwang[pi];
   g.role = order[(order.indexOf(g.role) + 1) % 3];
   drawBody(); drawFoot(); updateRaceNow();
+}
+
+function autoFillWinner(ri) {
+  const round = G.rounds[ri];
+  const winnerIdxs = round.scores.reduce((a, s, i) => s.role === 'winner' ? [...a, i] : a, []);
+  if (winnerIdxs.length !== 1) return;
+  const wi = winnerIdxs[0];
+  const totalLoss = round.scores.reduce((sum, s) =>
+    s.role === 'loser' ? sum + (Math.abs(parseFloat(s.val)) || 0) : sum, 0);
+  round.scores[wi].val = totalLoss > 0 ? String(totalLoss) : '';
+  const inp = document.getElementById(`score-inp-${ri}-${wi}`);
+  if (inp) inp.value = round.scores[wi].val;
+}
+
+let autoAdvanceTimer = null;
+
+function maybeAutoAdvance(ri) {
+  if (playState.active) return;
+  const sl = document.getElementById('raceSlider');
+  if (!sl || parseInt(sl.value) !== ri) return;
+  const round = G.rounds[ri];
+  if (Math.abs(roundMainSum(round)) > 0.001) return;
+  const hasWinner = round.scores.some(s => s.role === 'winner');
+  const hasLoser  = round.scores.some(s => s.role === 'loser' && s.val !== '');
+  if (!hasWinner || !hasLoser) return;
+  clearTimeout(autoAdvanceTimer);
+  autoAdvanceTimer = setTimeout(() => {
+    const sl2 = document.getElementById('raceSlider');
+    if (!sl2 || parseInt(sl2.value) !== ri) return;
+    if (Math.abs(roundMainSum(G.rounds[ri])) > 0.001) return;
+    updateRacePositions(ri + 1);
+  }, 700);
+}
+
+function stepRace(delta) {
+  if (playState.active) stopPlay();
+  const sl = document.getElementById('raceSlider');
+  const next = Math.max(0, Math.min(G.rounds.length, parseInt(sl.value) + delta));
+  updateRacePositions(next);
+}
+
+function addPlayer() {
+  if (G.players.length >= COLORS.length) {
+    showToast(`Maximum ${COLORS.length} players`); return;
+  }
+  const defaultName = `Player ${G.players.length + 1}`;
+  const raw = prompt('New player name:', defaultName);
+  if (raw === null) return;
+  const idx = G.players.length;
+  G.players.push({ name: raw.trim() || defaultName, color: COLORS[idx] });
+  G.rounds.forEach(r => {
+    r.scores.push({ val:'', fold:'none', role:'none' });
+    if (r.gwang !== null) r.gwang.push({ val:'', role:'none' });
+  });
+  renderTable();
+  initRaceTrack();
+  updateRacePositions(parseInt(document.getElementById('raceSlider').value));
 }
 
 function addGwang(ri) {
