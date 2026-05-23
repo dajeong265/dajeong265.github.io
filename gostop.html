@@ -294,8 +294,7 @@ tfoot td:first-child {
   box-shadow: 0 2px 8px rgba(0,0,0,.28);
   line-height: 1.4;
 }
-.flag-name  { display: block; font-size: .78rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
-.flag-score { display: block; font-size: .68rem; font-weight: 700; color: rgba(255,255,255,.9); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.flag-score { display: block; font-size: .82rem; font-weight: 800; color: rgba(255,255,255,.95); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
 .flag-pole  { width: 4px; height: 22px; background: #222; border-radius: 2px; margin-left: 3px; box-shadow: 1px 0 3px rgba(0,0,0,.4); }
 .horse-emoji {
   font-size: 3.2rem; line-height: 1;
@@ -376,8 +375,7 @@ tfoot td:first-child {
   .lane-rank  { font-size: 2.8rem; width: 46px; height: 52px; }
   .horse-emoji { font-size: 2.1rem; }
   .race-track-wrap { gap: 2.7rem; padding-top: 50px; padding-left: .5rem; padding-right: .5rem; }
-  .flag-name  { font-size: .68rem; }
-  .flag-score { font-size: .6rem; }
+  .flag-score { font-size: .72rem; }
   .flag-pole  { height: 14px; }
   .horse-flag { padding: .16rem .38rem; }
   .finish-line { top: -4px; bottom: -4px; }
@@ -996,7 +994,6 @@ function initRaceTrack() {
         <div class="horse-wrap" id="horse-${pi}" style="left:2%">
           <div class="horse-flag-above">
             <div class="horse-flag" style="background:${p.color}">
-              <span class="flag-name">${esc(p.name)}</span>
               <span class="flag-score" id="horse-score-${pi}">0</span>
             </div>
             <div class="flag-pole"></div>
