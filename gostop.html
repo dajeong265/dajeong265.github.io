@@ -135,7 +135,15 @@ td.round-td {
   background: #fff8e1; color: #a06000; cursor: pointer; transition: background .15s;
 }
 .gwang-remove-btn:hover { background: #fce4e4; color: #c0392b; border-color: #e74c3c; }
-.gwang-label { font-size: .78rem; color: #a06000; font-weight: 600; }
+.gwang-label { font-size: .78rem; color: #a06000; font-weight: 700; }
+.sel-btn {
+  font-size: .65rem; padding: .1rem .3rem;
+  border: 1px solid #ddd; border-radius: 4px;
+  background: none; cursor: pointer; font-weight: 700; color: #aaa;
+  transition: all .15s; white-space: nowrap;
+}
+.sel-btn:hover { background: #f5f5f5; }
+.sel-set { color: inherit; }
 
 /* cell fold states */
 td.cell-vol { background: #fffaec !important; }
@@ -614,7 +622,8 @@ function startGame() {
 function makeRound() {
   return {
     scores: G.players.map(() => ({ val:'', fold:'none', role:'none' })),
-    gwang: null
+    gwang: null,
+    sel: null
   };
 }
 
@@ -642,17 +651,24 @@ function drawBody() {
   tbody.innerHTML = '';
 
   G.rounds.forEach((round, ri) => {
-    // ── main row ──
-    const mainSum = roundMainSum(round);
+    const hasGwang = round.gwang !== null;
+    const mainSum   = roundMainSum(round);
     const mainSumOk = Math.abs(mainSum) < 0.001;
-    const hasInv = round.scores.some(s => s.fold === 'involuntary');
+    const hasInv    = round.scores.some(s => s.fold === 'involuntary');
 
+    // ── sel button ──
+    const selP   = round.sel !== null ? G.players[round.sel] : null;
+    const selBtn = selP
+      ? `<button class="sel-btn sel-set" onclick="cycleSel(${ri})" style="border-color:${selP.color};color:${selP.color}">●선</button>`
+      : `<button class="sel-btn" onclick="cycleSel(${ri})">선?</button>`;
+
+    // ── main row ──
     const tr = document.createElement('tr');
     tr.id = `row-${ri}`;
-    if (ri > 0) tr.classList.add('round-main-tr');
     if (!mainSumOk) tr.classList.add('row-error');
+    // border goes on first row of this round group
+    if (ri > 0 && !hasGwang) tr.classList.add('round-main-tr');
 
-    // round number cell
     const rtd = document.createElement('td');
     rtd.className = 'round-td';
     const sumBadge = `<span id="sum-badge-${ri}" class="sum-badge ${mainSumOk ? 'sum-ok' : 'sum-err'}">${mainSumOk ? '✓0' : 'Σ='+(mainSum>0?'+':'')+mainSum.toFixed(0)}</span>`;
@@ -663,26 +679,23 @@ function drawBody() {
       : '';
     rtd.innerHTML = `<div class="round-label">
       <span class="round-num-txt">R${ri+1}</span>
+      ${selBtn}
       ${sumBadge}
       ${gwangBtn}
     </div>`;
     tr.appendChild(rtd);
 
-    // score cells
     round.scores.forEach((s, pi) => {
       const td = document.createElement('td');
-      if (s.fold === 'voluntary')   td.className = 'cell-vol';
+      if (s.fold === 'voluntary')        td.className = 'cell-vol';
       else if (s.fold === 'involuntary') td.className = 'cell-inv';
 
       const fIcon = s.fold === 'voluntary' ? '🏳️자진'
-                  : s.fold === 'involuntary' ? '🚩강제'
-                  : '○';
+                  : s.fold === 'involuntary' ? '🚩강제' : '○';
       const fCls  = `fold-btn fold-${s.fold === 'none' ? 'none' : s.fold === 'voluntary' ? 'vol' : 'inv'}`;
-      const fTip  = s.fold === 'none'
-        ? '클릭: 자진 불참 설정'
-        : s.fold === 'voluntary'
-        ? '자진 불참 → 클릭: 강제 불참'
-        : '강제 불참 → 클릭: 해제';
+      const fTip  = s.fold === 'none' ? '클릭: 자진 불참 설정'
+                  : s.fold === 'voluntary' ? '자진 불참 → 클릭: 강제 불참'
+                  : '강제 불참 → 클릭: 해제';
 
       const isFolded  = s.fold !== 'none';
       const roleCls   = s.role === 'winner' ? 'wl-winner' : s.role === 'loser' ? 'wl-loser' : 'wl-none';
@@ -701,43 +714,46 @@ function drawBody() {
       </div>`;
       tr.appendChild(td);
     });
-    tbody.appendChild(tr);
 
-    // ── gwang sub-row ──
-    if (round.gwang !== null) {
-      const gwangSum = roundGwangSum(round);
+    // ── gwang row (rendered ABOVE main row when present) ──
+    if (hasGwang) {
+      const gwangSum   = roundGwangSum(round);
       const gwangSumOk = Math.abs(gwangSum) < 0.001;
 
       const gtr = document.createElement('tr');
       gtr.id = `gwang-row-${ri}`;
-      gtr.className = 'gwang-row' + (gwangSumOk ? '' : ' row-error');
+      // gwang row is first in this group → gets round boundary border
+      gtr.className = ['gwang-row', !gwangSumOk && 'row-error', ri > 0 && 'round-main-tr']
+        .filter(Boolean).join(' ');
 
       const gtd = document.createElement('td');
       gtd.className = 'round-td';
       const gBadge = `<span id="gwang-badge-${ri}" class="sum-badge ${gwangSumOk ? 'sum-ok' : 'sum-err'}">${gwangSumOk ? '✓0' : 'Σ='+(gwangSum>0?'+':'')+gwangSum.toFixed(0)}</span>`;
-      gtd.innerHTML = `<div class="round-label">
-        <span class="gwang-label">↳ 광</span>
-        ${gBadge}
-      </div>`;
+      gtd.innerHTML = `<div class="round-label"><span class="gwang-label">광</span>${gBadge}</div>`;
       gtr.appendChild(gtd);
 
       round.gwang.forEach((g, pi) => {
-        const gtd2 = document.createElement('td');
-        const gRoleCls   = g.role === 'winner' ? 'wl-winner' : g.role === 'loser' ? 'wl-loser' : 'wl-none';
-        const gRoleLabel = g.role === 'winner' ? '승' : g.role === 'loser' ? '패' : '–';
-        const gNegSign   = g.role === 'loser' ? '<span class="neg-sign">−</span>' : '';
-        const gInpCls    = g.role === 'loser' ? 'score-inp score-inp-loser' : 'score-inp';
+        const gtd2      = document.createElement('td');
+        const gRoleCls  = g.role === 'winner' ? 'wl-winner' : g.role === 'loser' ? 'wl-loser' : 'wl-none';
+        const gLabel    = g.role === 'winner' ? '승' : g.role === 'loser' ? '패' : '–';
+        const gNegSign  = g.role === 'loser' ? '<span class="neg-sign">−</span>' : '';
+        const gInpCls   = g.role === 'loser'  ? 'score-inp score-inp-loser'  :
+                          g.role === 'winner' ? 'score-inp score-inp-winner' : 'score-inp';
+        const gRdOnly   = g.role === 'winner' ? 'readonly' : '';
+        const gDis      = g.role === 'none'   ? 'disabled' : '';
         gtd2.innerHTML = `<div class="cell-body">
-          <button class="wl-btn ${gRoleCls}" onclick="cycleGwangRole(${ri},${pi})">${gRoleLabel}</button>
-          ${gNegSign}<input class="${gInpCls}" type="number" step="1"
+          <button class="wl-btn ${gRoleCls}" disabled>${gLabel}</button>
+          ${gNegSign}<input id="gwang-inp-${ri}-${pi}" class="${gInpCls}" type="number" step="1" ${gRdOnly} ${gDis}
                  value="${esc(g.val)}" placeholder="0"
                  oninput="onGwangScore(${ri},${pi},this.value)">
           <div style="min-width:28px"></div>
         </div>`;
         gtr.appendChild(gtd2);
       });
-      tbody.appendChild(gtr);
+
+      tbody.appendChild(gtr);   // gwang FIRST
     }
+    tbody.appendChild(tr);      // main row SECOND
   });
 }
 
@@ -815,12 +831,26 @@ function onScore(ri, pi, v) {
 function cycleFold(ri, pi) {
   const order = ['none','voluntary','involuntary'];
   const s = G.rounds[ri].scores[pi];
-  s.fold = order[(order.indexOf(s.fold) + 1) % 3];
-  if (s.fold !== 'none') {
-    s.val = '';
-    s.role = 'none';
-    autoFillWinner(ri);
+  const prevFold = s.fold;
+  const nextFold = order[(order.indexOf(prevFold) + 1) % 3];
+
+  if (nextFold === 'involuntary') {
+    if (G.rounds[ri].sel === null) { showToast('선을 먼저 설정하세요'); return; }
+    if (G.rounds[ri].sel === pi)   { showToast('선 player cannot be 강제 불참'); return; }
   }
+
+  s.fold = nextFold;
+  if (nextFold !== 'none') { s.val = ''; s.role = 'none'; autoFillWinner(ri); }
+
+  if (nextFold === 'involuntary') {
+    if (!G.rounds[ri].gwang) G.rounds[ri].gwang = G.players.map(() => ({ val:'', role:'none' }));
+    applyGwangRoles(ri);
+  }
+
+  if (prevFold === 'involuntary') {
+    if (!G.rounds[ri].scores.some(sc => sc.fold === 'involuntary')) G.rounds[ri].gwang = null;
+  }
+
   drawBody(); drawFoot();
 }
 
@@ -853,6 +883,42 @@ function autoFillWinner(ri) {
   round.scores[wi].val = totalLoss > 0 ? String(totalLoss) : '';
   const inp = document.getElementById(`score-inp-${ri}-${wi}`);
   if (inp) inp.value = round.scores[wi].val;
+}
+
+function autoFillGwangWinner(ri) {
+  const round = G.rounds[ri];
+  if (!round.gwang) return;
+  const winnerIdxs = round.gwang.reduce((a, g, i) => g.role === 'winner' ? [...a, i] : a, []);
+  if (winnerIdxs.length !== 1) return;
+  const wi = winnerIdxs[0];
+  const totalLoss = round.gwang.reduce((sum, g) =>
+    g.role === 'loser' ? sum + (Math.abs(parseFloat(g.val)) || 0) : sum, 0);
+  round.gwang[wi].val = totalLoss > 0 ? String(totalLoss) : '';
+  const inp = document.getElementById(`gwang-inp-${ri}-${wi}`);
+  if (inp) inp.value = round.gwang[wi].val;
+  refreshGwangRowState(ri);
+}
+
+function applyGwangRoles(ri) {
+  const round = G.rounds[ri];
+  if (!round.gwang) return;
+  const forcedIdx = round.scores.findIndex(s => s.fold === 'involuntary');
+  if (forcedIdx === -1) return;
+  round.gwang.forEach((g, i) => {
+    if (i === forcedIdx)                          g.role = 'winner';
+    else if (i === round.sel)                     g.role = 'none';
+    else if (round.scores[i].fold === 'none')     g.role = 'loser';
+    else                                          g.role = 'none';
+  });
+  autoFillGwangWinner(ri);
+}
+
+function cycleSel(ri) {
+  const round = G.rounds[ri];
+  const n = G.players.length;
+  round.sel = round.sel === null ? 0 : (round.sel + 1 >= n ? null : round.sel + 1);
+  if (round.gwang) applyGwangRoles(ri);
+  drawBody(); drawFoot();
 }
 
 let autoAdvanceTimer = null;
@@ -902,6 +968,8 @@ function addPlayer() {
 
 function addGwang(ri) {
   G.rounds[ri].gwang = G.players.map(() => ({ val:'', role:'none' }));
+  const hasForcedFold = G.rounds[ri].scores.some(s => s.fold === 'involuntary');
+  if (hasForcedFold && G.rounds[ri].sel !== null) applyGwangRoles(ri);
   drawBody(); drawFoot();
 }
 function removeGwang(ri) {
@@ -910,6 +978,7 @@ function removeGwang(ri) {
 }
 function onGwangScore(ri, pi, v) {
   G.rounds[ri].gwang[pi].val = v;
+  autoFillGwangWinner(ri);
   refreshGwangRowState(ri);
   drawFoot();
   updateRaceNow();
