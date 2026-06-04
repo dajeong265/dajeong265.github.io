@@ -136,20 +136,21 @@ td.round-td {
 }
 .gwang-remove-btn:hover { background: #fce4e4; color: #c0392b; border-color: #e74c3c; }
 .gwang-label { font-size: .78rem; color: #a06000; font-weight: 700; }
-.sel-btn {
-  font-size: .65rem; padding: .1rem .3rem;
-  border: 1px solid #ddd; border-radius: 4px;
-  background: none; cursor: pointer; font-weight: 700; color: #aaa;
-  transition: all .15s; white-space: nowrap;
+.sel-player-btn {
+  height: 24px; min-width: 26px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f5f5f5; color: #bbb; cursor: pointer;
+  font-size: .68rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s;
 }
-.sel-btn:hover { background: #f5f5f5; }
-.sel-set { color: inherit; }
+.sel-player-btn:hover { background: #e8e8e8; color: #555; }
+.sel-player-active { background: #e8f5e9; color: #1a8a3a; border-color: #81c784; }
 
 /* cell fold states */
 td.cell-vol { background: #fffaec !important; }
 td.cell-inv { background: #fff0f0 !important; }
 
-.cell-body { display: flex; align-items: center; justify-content: center; gap: .28rem; min-width: 168px; }
+.cell-body { display: flex; align-items: center; justify-content: center; gap: .28rem; min-width: 196px; }
 
 .fold-btn {
   height: 26px; min-width: 28px; border-radius: 6px; border: 1px solid transparent;
@@ -352,7 +353,8 @@ tfoot td:first-child {
 @media (max-width: 768px) {
   .score-inp { font-size: 16px; }
   .fold-btn  { height: 36px; min-width: 64px; font-size: .7rem; touch-action: manipulation; }
-  .wl-btn    { height: 36px; min-width: 36px; touch-action: manipulation; }
+  .wl-btn         { height: 36px; min-width: 36px; touch-action: manipulation; }
+  .sel-player-btn { height: 36px; min-width: 36px; touch-action: manipulation; }
   .out-btn, .step-btn, .count-btn, .ghost-btn, .add-round-btn,
   .save-archive-btn, .play-btn, .gwang-add-btn, .gwang-remove-btn { touch-action: manipulation; }
   .archive-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
@@ -651,37 +653,29 @@ function drawBody() {
   tbody.innerHTML = '';
 
   G.rounds.forEach((round, ri) => {
-    const hasGwang = round.gwang !== null;
-    const mainSum   = roundMainSum(round);
-    const mainSumOk = Math.abs(mainSum) < 0.001;
-    const hasInv    = round.scores.some(s => s.fold === 'involuntary');
-
-    // ── sel button ──
-    const selP   = round.sel !== null ? G.players[round.sel] : null;
-    const selBtn = selP
-      ? `<button class="sel-btn sel-set" onclick="cycleSel(${ri})" style="border-color:${selP.color};color:${selP.color}">●선</button>`
-      : `<button class="sel-btn" onclick="cycleSel(${ri})">선?</button>`;
+    const hasGwang   = round.gwang !== null;
+    const mainSum    = roundMainSum(round);
+    const mainSumOk  = Math.abs(mainSum) < 0.001;
+    const hasInv     = round.scores.some(s => s.fold === 'involuntary');
+    const isQuadGame = G.players.length === 4;
 
     // ── main row ──
     const tr = document.createElement('tr');
     tr.id = `row-${ri}`;
     if (!mainSumOk) tr.classList.add('row-error');
-    // border goes on first row of this round group
     if (ri > 0 && !hasGwang) tr.classList.add('round-main-tr');
 
     const rtd = document.createElement('td');
     rtd.className = 'round-td';
     const sumBadge = `<span id="sum-badge-${ri}" class="sum-badge ${mainSumOk ? 'sum-ok' : 'sum-err'}">${mainSumOk ? '✓0' : 'Σ='+(mainSum>0?'+':'')+mainSum.toFixed(0)}</span>`;
-    const gwangBtn = hasInv
+    const gwangBtn = isQuadGame && hasInv
       ? (round.gwang === null
           ? `<button class="gwang-add-btn" onclick="addGwang(${ri})">＋광</button>`
           : `<button class="gwang-remove-btn" onclick="removeGwang(${ri})">광 ✕</button>`)
       : '';
     rtd.innerHTML = `<div class="round-label">
       <span class="round-num-txt">R${ri+1}</span>
-      ${selBtn}
-      ${sumBadge}
-      ${gwangBtn}
+      ${sumBadge}${gwangBtn}
     </div>`;
     tr.appendChild(rtd);
 
@@ -705,12 +699,16 @@ function drawBody() {
                         s.role === 'winner' ? 'score-inp score-inp-winner' : 'score-inp';
       const rdOnly    = s.role === 'winner' ? 'readonly' : '';
       const dis       = isFolded ? 'disabled' : '';
+      const selBtn    = isQuadGame
+        ? `<button class="sel-player-btn${round.sel === pi ? ' sel-player-active' : ''}" onclick="setSel(${ri},${pi})" ${dis}>선</button>`
+        : '';
       td.innerHTML = `<div class="cell-body">
-        <button class="wl-btn ${roleCls}" onclick="cycleRole(${ri},${pi})" ${dis}>${roleLabel}</button>
+        <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
         ${negSign}<input id="score-inp-${ri}-${pi}" class="${inpCls}" type="number" step="1" ${rdOnly} ${dis}
                value="${esc(s.val)}" placeholder="0"
                oninput="onScore(${ri},${pi},this.value)">
-        <button class="${fCls}" title="${fTip}" onclick="cycleFold(${ri},${pi})">${fIcon}</button>
+        <button class="wl-btn ${roleCls}" onclick="cycleRole(${ri},${pi})" ${dis}>${roleLabel}</button>
+        ${selBtn}
       </div>`;
       tr.appendChild(td);
     });
@@ -834,20 +832,23 @@ function cycleFold(ri, pi) {
   const prevFold = s.fold;
   const nextFold = order[(order.indexOf(prevFold) + 1) % 3];
 
-  if (nextFold === 'involuntary') {
+  if (G.rounds[ri].sel === pi && nextFold !== 'none') {
+    showToast('선 player cannot fold'); return;
+  }
+
+  if (nextFold === 'involuntary' && G.players.length === 4) {
     if (G.rounds[ri].sel === null) { showToast('선을 먼저 설정하세요'); return; }
-    if (G.rounds[ri].sel === pi)   { showToast('선 player cannot be 강제 불참'); return; }
   }
 
   s.fold = nextFold;
   if (nextFold !== 'none') { s.val = ''; s.role = 'none'; autoFillWinner(ri); }
 
-  if (nextFold === 'involuntary') {
+  if (nextFold === 'involuntary' && G.players.length === 4) {
     if (!G.rounds[ri].gwang) G.rounds[ri].gwang = G.players.map(() => ({ val:'', role:'none' }));
     applyGwangRoles(ri);
   }
 
-  if (prevFold === 'involuntary') {
+  if (prevFold === 'involuntary' && G.players.length === 4) {
     if (!G.rounds[ri].scores.some(sc => sc.fold === 'involuntary')) G.rounds[ri].gwang = null;
   }
 
@@ -913,10 +914,10 @@ function applyGwangRoles(ri) {
   autoFillGwangWinner(ri);
 }
 
-function cycleSel(ri) {
+function setSel(ri, pi) {
   const round = G.rounds[ri];
-  const n = G.players.length;
-  round.sel = round.sel === null ? 0 : (round.sel + 1 >= n ? null : round.sel + 1);
+  if (round.scores[pi].fold !== 'none') { showToast('선 player must be active (not folded)'); return; }
+  round.sel = round.sel === pi ? null : pi;
   if (round.gwang) applyGwangRoles(ri);
   drawBody(); drawFoot();
 }
